@@ -1,65 +1,85 @@
+import abc
 import unittest
 from typing import List
 from decimal import Decimal
 import numpy as np
 
 
-class AtomSettingsCase(object):
+class MostlyDefaultDataclass(abc.ABC):
+    DEFAULTS: dict
+
+    def __init__(self, **kwargs):
+        for k, v in kwargs.items():
+            if k not in self.DEFAULTS.keys():
+                raise KeyError(f'Unknown attribute "{k}"')
+        for k, v in self.DEFAULTS:
+            if k in kwargs.keys():
+                v_class = self.DEFAULTS[k].__class__
+                self.__setattr__(k, v_class(kwargs[k]))
+            else:
+                self.__setattr__(k, v)
+
+
+class AtomSettingsCase(MostlyDefaultDataclass):
     """
     This class stores individual atoms parameters independent of unit cell,
     including atom type as well as individual xyz, Uij, Cijk, and Dijkl values.
     """
-    def __init__(self, **kwargs):
-        self.Z: int = 42
-        self.x: Decimal = Decimal('0.5')
-        self.y: Decimal = Decimal('0.5')
-        self.z: Decimal = Decimal('0.5')
-        self.U11: Decimal = Decimal('0.1')
-        self.U22: Decimal = Decimal('0.1')
-        self.U33: Decimal = Decimal('0.1')
-        self.U12: Decimal = Decimal('0.0')
-        self.U13: Decimal = Decimal('0.0')
-        self.U23: Decimal = Decimal('0.0')
-        self.C111: Decimal = Decimal('0.0')
-        self.C222: Decimal = Decimal('0.0')
-        self.C333: Decimal = Decimal('0.0')
-        self.C112: Decimal = Decimal('0.0')
-        self.C122: Decimal = Decimal('0.0')
-        self.C113: Decimal = Decimal('0.0')
-        self.C133: Decimal = Decimal('0.0')
-        self.C223: Decimal = Decimal('0.0')
-        self.C233: Decimal = Decimal('0.0')
-        self.C123: Decimal = Decimal('0.0')
-        self.D1111: Decimal = Decimal('0.0')
-        self.D2222: Decimal = Decimal('0.0')
-        self.D3333: Decimal = Decimal('0.0')
-        self.D1112: Decimal = Decimal('0.0')
-        self.D1222: Decimal = Decimal('0.0')
-        self.D1113: Decimal = Decimal('0.0')
-        self.D1333: Decimal = Decimal('0.0')
-        self.D2223: Decimal = Decimal('0.0')
-        self.D2333: Decimal = Decimal('0.0')
-        self.D1122: Decimal = Decimal('0.0')
-        self.D1133: Decimal = Decimal('0.0')
-        self.D2233: Decimal = Decimal('0.0')
-        self.D1123: Decimal = Decimal('0.0')
-        self.D1223: Decimal = Decimal('0.0')
-        self.D1233: Decimal = Decimal('0.0')
+
+    DEFAULTS = {
+        'Z': 42,
+        'x': Decimal('0.5'),
+        'y': Decimal('0.5'),
+        'z': Decimal('0.5'),
+        'U11': Decimal('0.1'),
+        'U22': Decimal('0.1'),
+        'U33': Decimal('0.1'),
+        'U12': Decimal('0.0'),
+        'U13': Decimal('0.0'),
+        'U23': Decimal('0.0'),
+        'C111': Decimal('0.0'),
+        'C222': Decimal('0.0'),
+        'C333': Decimal('0.0'),
+        'C112': Decimal('0.0'),
+        'C122': Decimal('0.0'),
+        'C113': Decimal('0.0'),
+        'C133': Decimal('0.0'),
+        'C223': Decimal('0.0'),
+        'C233': Decimal('0.0'),
+        'C123': Decimal('0.0'),
+        'D1111': Decimal('0.0'),
+        'D2222': Decimal('0.0'),
+        'D3333': Decimal('0.0'),
+        'D1112': Decimal('0.0'),
+        'D1222': Decimal('0.0'),
+        'D1113': Decimal('0.0'),
+        'D1333': Decimal('0.0'),
+        'D2223': Decimal('0.0'),
+        'D2333': Decimal('0.0'),
+        'D1122': Decimal('0.0'),
+        'D1133': Decimal('0.0'),
+        'D2233': Decimal('0.0'),
+        'D1123': Decimal('0.0'),
+        'D1223': Decimal('0.0'),
+        'D1233': Decimal('0.0'),
+    }
 
 
-class CellSettingsCase(object):
+class CellSettingsCase(MostlyDefaultDataclass):
     """
     This class stores all parameters concerning unit cell to be tested
     for positiveness, including unit cell parameters and atoms inside it.
     """
-    def __init__(self):
-        self.a: Decimal = Decimal(10)
-        self.b: Decimal = Decimal(10)
-        self.c: Decimal = Decimal(10)
-        self.al: Decimal = Decimal(90)
-        self.be: Decimal = Decimal(90)
-        self.ga: Decimal = Decimal(90)
-        self.atoms: List[AtomSettingsCase]
+
+    DEFAULTS = {
+        'a': 42,
+        'b': Decimal('0.5'),
+        'c': Decimal('0.5'),
+        'al': Decimal('0.5'),
+        'be': Decimal('0.1'),
+        'ga': Decimal('0.1'),
+        'atoms': [AtomSettingsCase()]
+    }
 
     @property
     def xd_par_file_contents(self) -> str:
