@@ -1,0 +1,21 @@
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! <<< X D MASTER FILE >>> prepared by PositiveInspector                       !
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+TITLE PI
+CELL     {a}  {b}  {c}   {al}   {be}   {ga}
+WAVE     0.71073
+CELLSD    0.0000   0.0000   0.0000    0.000    0.000    0.000
+LATT   A P
+BANK   CR
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+   MODULE *XDPDF
+!
+SELECT atom Mo(1) scale 1.0 orth
+CUMORD *second *third *fourth
+GRID 3-points *cryst
+LIMITS xmin -{grid_radius} xmax {grid_radius} nx {grid_steps}
+LIMITS ymin -{grid_radius} ymax {grid_radius} nx {grid_steps}
+LIMITS zmin -{grid_radius} zmax {grid_radius} nx {grid_steps}
+   END XDPDF
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

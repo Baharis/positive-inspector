@@ -25,18 +25,19 @@ class MostlyDefaultDict(UserDict, abc.ABC):
 
 class SettingCase(MostlyDefaultDict):
     """
-    This class stores unit cell parameters as well as central atoms parameters,
+    This class stores unit cell parameters and central Mo(1) atom parameters,
     including its type as well as individual xyz, Uij, Cijk, and Dijkl values.
     """
 
     DEFAULTS = {
+        # UNIT CELL SETTING
         'a': Decimal('10.0'),
         'b': Decimal('10.0'),
         'c': Decimal('10.0'),
         'al': Decimal('90'),
         'be': Decimal('90'),
         'ga': Decimal('90'),
-        'Z': 42,
+        # ATOM SETTING
         'x': Decimal('0.5'),
         'y': Decimal('0.5'),
         'z': Decimal('0.5'),
@@ -71,6 +72,9 @@ class SettingCase(MostlyDefaultDict):
         'D1123': Decimal('0.0'),
         'D1223': Decimal('0.0'),
         'D1233': Decimal('0.0'),
+        # GRID SETTING
+        'grid_radius': Decimal('1.0'),
+        'grid_steps': 41,
     }
 
     @property
