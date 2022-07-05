@@ -1,6 +1,9 @@
 import abc
 import itertools
+import os
 import pathlib
+import subprocess
+import tempfile
 import unittest
 from collections import UserList, UserDict
 from decimal import Decimal
@@ -45,9 +48,9 @@ class SettingCase(MostlyDefaultDict):
         'x': Decimal('0.5'),
         'y': Decimal('0.5'),
         'z': Decimal('0.5'),
-        'U11': Decimal('0.1'),
-        'U22': Decimal('0.1'),
-        'U33': Decimal('0.1'),
+        'U11': Decimal('0.01'),
+        'U22': Decimal('0.01'),
+        'U33': Decimal('0.01'),
         'U12': Decimal('0.0'),
         'U13': Decimal('0.0'),
         'U23': Decimal('0.0'),
@@ -82,6 +85,8 @@ class SettingCase(MostlyDefaultDict):
     }
     XD_TEMPLATE_INP_PATH = CURRENT_DIRECTORY.joinpath('xd_template.inp')
     XD_TEMPLATE_MAS_PATH = CURRENT_DIRECTORY.joinpath('xd_template.mas')
+
+    # TODO recompute Uijk and Uijkm from Cijk and Dijkm
 
     @property
     def xd_inp_file_contents(self) -> str:
@@ -121,6 +126,36 @@ class PDFGrid(object):
 
     @classmethod
     def from_xd_cube(cls, setting: SettingCase):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            xd_inp_file_path = pathlib.Path(temp_dir).joinpath('xd.inp')
+            xd_mas_file_path = pathlib.Path(temp_dir).joinpath('xd.mas')
+            xd_out_file_path = pathlib.Path(temp_dir).joinpath('xd_pdf.out')
+            xd_grd_file_path = pathlib.Path(temp_dir).joinpath('xd_pdf.grd')
+            with open(xd_inp_file_path, 'w') as xd_inp_file:
+                xd_inp_file.write(setting.xd_inp_file_contents)
+            with open(xd_mas_file_path, 'w') as xd_mas_file:
+                xd_mas_file.write(setting.xd_mas_file_contents)
+            my_env = os.environ
+            my_env['XD_DATADIR'] = '/home/dtchon/XD'
+            my_env['PATH'] += os.pathsep + '/home/dtchon/XD/bin'
+            process = subprocess.Popen("xdpdf", shell=True, cwd=temp_dir,
+                                       env=my_env, stdout=subprocess.DEVNULL)
+            process.wait(timeout=5)
+            with open(xd_out_file_path, 'r') as xd_out_file:
+                xd_out_file_contents = xd_out_file.read()
+            with open(xd_grd_file_path, 'r') as xd_grd_file:
+                xd_grd_file_contents = xd_grd_file.read()
+                print(setting)
+                print(xd_out_file_contents)
+
+            # TODO: TEMPORARY PART
+            for line in xd_out_file_contents.splitlines():
+                if 'PDF values range from' in line:
+                    minimum_value = float(line.split()[-4])
+                    if minimum_value < 0.0:
+                        print('negative minimum found')
+                        print(setting)
+                        assert False
         return cls()
 
     @classmethod
@@ -145,6 +180,37 @@ class PositiveInspector(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    sc = SettingCase()
-    print(sc.xd_mas_file_contents)
+    setting_list = SettingList.where(
+        C111=[-1, 1],
+        C222=[-1, 1],
+        C333=[-1, 1],
+        C112=[-1, 1],
+        C122=[-1, 1],
+        C113=[-1, 1],
+        C133=[-1, 1],
+        C223=[-1, 1],
+        C233=[-1, 1],
+        C123=[-1, 1],
+        a=[1],
+        b=[1],
+        c=[1],
+        # D1111=[-10000, 10000],
+        # D2222=[-10000, 10000],
+        # D3333=[-10000, 10000],
+        # D1112=[-10000, 10000],
+        # D1222=[-10000, 10000],
+        # D1113=[-10000, 10000],
+        # D1333=[-10000, 10000],
+        # D2223=[-10000, 10000],
+        # D2333=[-10000, 10000],
+        # D1122=[-10000, 10000],
+        # D1133=[-10000, 10000],
+        # D2233=[-10000, 10000],
+        # D1123=[-10000, 10000],
+        # D1223=[-10000, 10000],
+        # D1233=[-10000, 10000],
+    )
+    for setting_number, setting in enumerate(setting_list):
+        print(f'{setting_number} / {len(setting_list)}')
+        PDFGrid.from_xd_cube(setting)
 
