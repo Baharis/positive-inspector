@@ -11,7 +11,7 @@ BANK   CR
 !
    MODULE *XDPDF
 !
-SELECT atom Mo(1) scale 1.0 orth
+SELECT atom Fe(1) scale 1.0 orth
 QMORD *second *third *fourth
 GRID 3-points *cryst
 LIMITS xmin -{grid_radius} xmax {grid_radius} nx {grid_steps}
