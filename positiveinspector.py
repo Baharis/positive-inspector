@@ -77,7 +77,7 @@ class SettingCase(MostlyDefaultDict):
         'D1223': Decimal('0.0'),
         'D1233': Decimal('0.0'),
         # GRID SETTING
-        'grid_radius': Decimal('0.1'),
+        'grid_radius': Decimal('1.0'),
         'grid_steps': 21,
     }
     XD_TEMPLATE_INP_PATH = CURRENT_DIRECTORY.joinpath('xd_template.inp')
