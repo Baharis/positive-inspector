@@ -1,10 +1,14 @@
 import abc
 import itertools
+import pathlib
 import unittest
 from collections import UserList, UserDict
 from decimal import Decimal
 from typing import Iterable
 import numpy as np
+
+
+CURRENT_DIRECTORY = pathlib.Path(__file__).resolve().parent
 
 
 class MostlyDefaultDict(UserDict, abc.ABC):
@@ -74,16 +78,20 @@ class SettingCase(MostlyDefaultDict):
         'D1233': Decimal('0.0'),
         # GRID SETTING
         'grid_radius': Decimal('1.0'),
-        'grid_steps': 41,
+        'grid_steps': 21,
     }
+    XD_TEMPLATE_INP_PATH = CURRENT_DIRECTORY.joinpath('xd_template.inp')
+    XD_TEMPLATE_MAS_PATH = CURRENT_DIRECTORY.joinpath('xd_template.mas')
 
     @property
-    def xd_par_file_contents(self) -> str:
-        return str()
+    def xd_inp_file_contents(self) -> str:
+        with open(self.XD_TEMPLATE_INP_PATH, 'r') as file:
+            return file.read().format(**self)
 
     @property
     def xd_mas_file_contents(self) -> str:
-        return str()
+        with open(self.XD_TEMPLATE_MAS_PATH, 'r') as file:
+            return file.read().format(**self)
 
     @property
     def olex2_res_file_contents(self) -> str:
@@ -137,8 +145,6 @@ class PositiveInspector(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    asl = SettingList.where(y=[Decimal('0.5'), Decimal('0.6')],
-                            z=[Decimal('0.7'), Decimal('0.8')])
-    for asc in asl:
-        print(asc)
+    sc = SettingCase()
+    print(sc.xd_inp_file_contents)
 
