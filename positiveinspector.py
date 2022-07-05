@@ -3,7 +3,7 @@ import itertools
 import unittest
 from collections import UserList, UserDict
 from decimal import Decimal
-from typing import Iterable, Dict
+from typing import Iterable
 import numpy as np
 
 
@@ -23,13 +23,19 @@ class MostlyDefaultDict(UserDict, abc.ABC):
                 self[k] = v
 
 
-class AtomSettingsCase(MostlyDefaultDict):
+class SettingCase(MostlyDefaultDict):
     """
-    This class stores individual atoms parameters independent of unit cell,
-    including atom type as well as individual xyz, Uij, Cijk, and Dijkl values.
+    This class stores unit cell parameters as well as central atoms parameters,
+    including its type as well as individual xyz, Uij, Cijk, and Dijkl values.
     """
 
     DEFAULTS = {
+        'a': Decimal('10.0'),
+        'b': Decimal('10.0'),
+        'c': Decimal('10.0'),
+        'al': Decimal('90'),
+        'be': Decimal('90'),
+        'ga': Decimal('90'),
         'Z': 42,
         'x': Decimal('0.5'),
         'y': Decimal('0.5'),
@@ -67,23 +73,6 @@ class AtomSettingsCase(MostlyDefaultDict):
         'D1233': Decimal('0.0'),
     }
 
-
-class CellSettingsCase(MostlyDefaultDict):
-    """
-    This class stores all parameters concerning unit cell to be tested
-    for positiveness, including unit cell parameters and atoms inside it.
-    """
-
-    DEFAULTS = {
-        'a': 42,
-        'b': Decimal('0.5'),
-        'c': Decimal('0.5'),
-        'al': Decimal('0.5'),
-        'be': Decimal('0.1'),
-        'ga': Decimal('0.1'),
-        'atoms': [AtomSettingsCase()]
-    }
-
     @property
     def xd_par_file_contents(self) -> str:
         return str()
@@ -97,7 +86,7 @@ class CellSettingsCase(MostlyDefaultDict):
         return str()
 
 
-class AtomSettingsList(UserList):
+class SettingList(UserList):
     @classmethod
     def where(cls, **kwargs: Iterable):
         """
@@ -106,10 +95,10 @@ class AtomSettingsList(UserList):
         For three `kwargs` of length 1, 3, and 5, return an instance of
         `AtomSettingsList` with 1*3*5=15 distinct `AtomSettingsCase`s.
         """
-        new = AtomSettingsList()
+        new = SettingList()
         for value_combination in itertools.product(*kwargs.values()):
-            asc_kwargs = {k: v for k, v in zip(kwargs.keys(), value_combination)}
-            new.append(AtomSettingsCase(**asc_kwargs))
+            new_kwargs = {k: v for k, v in zip(kwargs.keys(), value_combination)}
+            new.append(SettingCase(**new_kwargs))
         return new
 
 
@@ -119,11 +108,11 @@ class PDFGrid(object):
         negative_volume: float = 0.0
 
     @classmethod
-    def from_xd_cube(cls, csc: CellSettingsCase):
+    def from_xd_cube(cls, setting: SettingCase):
         return cls()
 
     @classmethod
-    def from_nosphera2_cube(cls, csc: CellSettingsCase):
+    def from_nosphera2_cube(cls, setting: SettingCase):
         return cls()
 
     @property
@@ -133,21 +122,19 @@ class PDFGrid(object):
 
 class PositiveInspector(unittest.TestCase):
     def test_grids_have_same_sign(self):
-        asc_list: AtomSettingsList[AtomSettingsCase]
-        for asc in asc_list:
+        setting_list: SettingList[SettingCase]
+        for setting in setting_list:
             with self.subTest('XD and olex2 report different positivity',
-                              asc_=asc):
-                csc = CellSettingsCase()
-                csc.atoms = [asc]
-                grid_xd = PDFGrid.from_xd_cube(csc=csc)
-                grid_nosphera2 = PDFGrid.from_nosphera2_cube(csc=csc)
+                              setting=setting):
+                grid_xd = PDFGrid.from_xd_cube(setting=setting)
+                grid_nosphera2 = PDFGrid.from_nosphera2_cube(setting=setting)
                 self.assertEqual(grid_xd.is_positive_definite,
                                  grid_nosphera2.is_positive_definite)
 
 
 if __name__ == '__main__':
-    asl = AtomSettingsList.where(y=[Decimal('0.5'), Decimal('0.6')],
-                                 z=[Decimal('0.7'), Decimal('0.8')])
+    asl = SettingList.where(y=[Decimal('0.5'), Decimal('0.6')],
+                            z=[Decimal('0.7'), Decimal('0.8')])
     for asc in asl:
         print(asc)
 
