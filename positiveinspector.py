@@ -1,28 +1,29 @@
 import abc
 import itertools
 import unittest
-from collections import UserList
+from collections import UserList, UserDict
 from decimal import Decimal
 from typing import Iterable, Dict
 import numpy as np
 
 
-class MostlyDefaultDataclass(abc.ABC):
+class MostlyDefaultDict(UserDict, abc.ABC):
     DEFAULTS: dict
 
     def __init__(self, **kwargs):
+        super().__init__()
         for k, v in kwargs.items():
             if k not in self.DEFAULTS.keys():
                 raise KeyError(f'Unknown attribute "{k}"')
-        for k, v in self.DEFAULTS:
+        for k, v in self.DEFAULTS.items():
             if k in kwargs.keys():
                 v_class = self.DEFAULTS[k].__class__
-                self.__setattr__(k, v_class(kwargs[k]))
+                self[k] = v_class(kwargs[k])
             else:
-                self.__setattr__(k, v)
+                self[k] = v
 
 
-class AtomSettingsCase(MostlyDefaultDataclass):
+class AtomSettingsCase(MostlyDefaultDict):
     """
     This class stores individual atoms parameters independent of unit cell,
     including atom type as well as individual xyz, Uij, Cijk, and Dijkl values.
@@ -67,7 +68,7 @@ class AtomSettingsCase(MostlyDefaultDataclass):
     }
 
 
-class CellSettingsCase(MostlyDefaultDataclass):
+class CellSettingsCase(MostlyDefaultDict):
     """
     This class stores all parameters concerning unit cell to be tested
     for positiveness, including unit cell parameters and atoms inside it.
@@ -98,7 +99,7 @@ class CellSettingsCase(MostlyDefaultDataclass):
 
 class AtomSettingsList(UserList):
     @classmethod
-    def where(cls, **kwargs: Dict[str: Iterable]):
+    def where(cls, **kwargs: Iterable):
         """
         Return an `AtomSettingsList` where every `kwarg`-key assumes values of
         `kwarg`-value. Names of kwargs must match those of  `AtomSettingsCase`.
@@ -106,7 +107,7 @@ class AtomSettingsList(UserList):
         `AtomSettingsList` with 1*3*5=15 distinct `AtomSettingsCase`s.
         """
         new = AtomSettingsList()
-        for value_combination in itertools.product(kwargs.values()):
+        for value_combination in itertools.product(*kwargs.values()):
             asc_kwargs = {k: v for k, v in zip(kwargs.keys(), value_combination)}
             new.append(AtomSettingsCase(**asc_kwargs))
         return new
@@ -142,3 +143,11 @@ class PositiveInspector(unittest.TestCase):
                 grid_nosphera2 = PDFGrid.from_nosphera2_cube(csc=csc)
                 self.assertEqual(grid_xd.is_positive_definite,
                                  grid_nosphera2.is_positive_definite)
+
+
+if __name__ == '__main__':
+    asl = AtomSettingsList.where(y=[Decimal('0.5'), Decimal('0.6')],
+                                 z=[Decimal('0.7'), Decimal('0.8')])
+    for asc in asl:
+        print(asc)
+
