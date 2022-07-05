@@ -1,7 +1,9 @@
 import abc
+import itertools
 import unittest
-from typing import List
+from collections import UserList
 from decimal import Decimal
+from typing import Iterable, Dict
 import numpy as np
 
 
@@ -94,6 +96,22 @@ class CellSettingsCase(MostlyDefaultDataclass):
         return str()
 
 
+class AtomSettingsList(UserList):
+    @classmethod
+    def where(cls, **kwargs: Dict[str: Iterable]):
+        """
+        Return an `AtomSettingsList` where every `kwarg`-key assumes values of
+        `kwarg`-value. Names of kwargs must match those of  `AtomSettingsCase`.
+        For three `kwargs` of length 1, 3, and 5, return an instance of
+        `AtomSettingsList` with 1*3*5=15 distinct `AtomSettingsCase`s.
+        """
+        new = AtomSettingsList()
+        for value_combination in itertools.product(kwargs.values()):
+            asc_kwargs = {k: v for k, v in zip(kwargs.keys(), value_combination)}
+            new.append(AtomSettingsCase(**asc_kwargs))
+        return new
+
+
 class PDFGrid(object):
     def __init__(self):
         values: np.ndarray = np.zeros(1)
@@ -114,7 +132,7 @@ class PDFGrid(object):
 
 class PositiveInspector(unittest.TestCase):
     def test_grids_have_same_sign(self):
-        asc_list: List[AtomSettingsCase]
+        asc_list: AtomSettingsList[AtomSettingsCase]
         for asc in asc_list:
             with self.subTest('XD and olex2 report different positivity',
                               asc_=asc):
