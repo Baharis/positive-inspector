@@ -31,6 +31,16 @@ class MostlyDefaultDict(UserDict, abc.ABC):
                 self[k] = v
 
 
+class Environ(MostlyDefaultDict):
+    """Dictionary with current environment variables and helper functions"""
+    DEFAULTS = os.environ
+
+    def append(self, **kwargs: str) -> None:
+        """Set or append `kwargs.values` to current values of `kwargs.keys`"""
+        for k, v in kwargs.items():
+            self[k] = self.get(k, '') + os.pathsep + v
+
+
 class SettingCase(MostlyDefaultDict):
     """
     This class stores unit cell parameters and central Mo(1) atom parameters,
@@ -151,18 +161,15 @@ class PDFGrid(object):
                 xd_inp_file.write(setting.xd_inp_file_contents)
             with open(xd_mas_file_path, 'w') as xd_mas_file:
                 xd_mas_file.write(setting.xd_mas_file_contents)
-            my_env = os.environ
-            my_env['XD_DATADIR'] = '/home/dtchon/XD'
-            my_env['PATH'] += os.pathsep + '/home/dtchon/XD/bin'
+
+            my_env = Environ()
+            my_env.append(PATH='/home/dtchon/XD/bin')
+            my_env.append(XD_DATADIR='/home/dtchon/XD')
             process = subprocess.Popen("xdpdf", shell=True, cwd=temp_dir,
                                        env=my_env, stdout=subprocess.DEVNULL)
             process.wait(timeout=5)
             with open(xd_out_file_path, 'r') as xd_out_file:
                 xd_out_file_contents = xd_out_file.read()
-            with open(xd_grd_file_path, 'r') as xd_grd_file:
-                xd_grd_file_contents = xd_grd_file.read()
-                print(setting)
-                print(xd_out_file_contents)
 
             # TODO: TEMPORARY PART
             for line in xd_out_file_contents.splitlines():
