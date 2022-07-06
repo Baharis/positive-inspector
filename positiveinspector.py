@@ -201,7 +201,7 @@ class PDFGrid(object):
 
     @classmethod
     def _read_from_grid_file(cls, path: Union[str, pathlib.Path]):
-        with open(path, 'w') as grd_file:
+        with open(path, 'r') as grd_file:
             grd_file_lines = grd_file.readlines()
         grd_non_empty_lines = [line for line in grd_file_lines if line.strip()
                                and not cls.GRD_COMMENT_LINE_REGEX.match(line)]
@@ -234,11 +234,11 @@ class PDFGrid(object):
 
     @property
     def integrated_positive_probability(self):
-        return np.sum(self.array[self.array >= 0]) * self.voxel_size
+        return np.sum(self.array[self.array > 0]) * self.voxel_size
 
     @property
     def integrated_negative_probability(self):
-        return np.sum(self.array[self.array >= 0]) * self.voxel_size
+        return np.sum(self.array[self.array < 0]) * self.voxel_size
 
     @property
     def is_positive_definite(self):
@@ -290,6 +290,11 @@ if __name__ == '__main__':
         # D1233=[-10000, 10000],
     )
     for setting_number, setting in enumerate(setting_list):
-        print(f'{setting_number} / {len(setting_list)}')
-        PDFGrid.generate_from_setting(setting)
+        g = PDFGrid.generate_from_setting(setting, backend='xd')
+        print(f'{setting_number} / {len(setting_list)}: '
+              f'Σp+={g.integrated_positive_probability:8.5f} '
+              f'Σp-={g.integrated_negative_probability:8.5f} '
+              f'Σp= {g.integrated_probability:8.5f}')
+
+
 
