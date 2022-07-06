@@ -98,6 +98,7 @@ class SettingCase(MostlyDefaultDict):
     }
     XD_TEMPLATE_INP_PATH = CURRENT_DIRECTORY.joinpath('xd_template.inp')
     XD_TEMPLATE_MAS_PATH = CURRENT_DIRECTORY.joinpath('xd_template.mas')
+    OLEX2_TEMPLATE_INS_PATH = CURRENT_DIRECTORY.joinpath('olex2_template.mas')
 
     @property
     def has_third_order_moments(self) -> bool:
@@ -123,18 +124,23 @@ class SettingCase(MostlyDefaultDict):
     def xd_inp_file_contents(self) -> str:
         """string representation of `self`-based "xd.inp" file"""
         with open(self.XD_TEMPLATE_INP_PATH, 'r') as file:
-            return file.read().format(**self.format_dict)
+            file_contents = file.read().format(**self.format_dict)
+        return file_contents
 
     @property
     def xd_mas_file_contents(self) -> str:
         """string representation of `self`-based "xd.mas" file"""
         with open(self.XD_TEMPLATE_MAS_PATH, 'r') as file:
-            return file.read().format(**self.format_dict)
+            file_contents = file.read().format(**self.format_dict)
+        return file_contents
 
     @property
-    def olex2_res_file_contents(self) -> str:
+    def olex2_ins_file_contents(self) -> str:
         """string representation of `self`-based "olex2.res" file"""
-        return str()
+        with open(self.XD_TEMPLATE_MAS_PATH, 'r') as file:
+            file_contents = file.read().format(**self.format_dict)
+        return file_contents
+
 
 
 class SettingList(UserList):
@@ -158,7 +164,7 @@ class PDFGrid(object):
 
     class Backend(enum.Enum):
         XD = 'xd'
-        NoSpherA2 = 'nosphera2'
+        olex2 = 'olex2'
 
     GRD_COMMENT_LINE_REGEX = re.compile(r'^!.+$', re.MULTILINE)
 
@@ -167,8 +173,8 @@ class PDFGrid(object):
         """Create an instance based `SettingCase` objects using `backend`"""
         if cls.Backend(backend.lower()) is cls.Backend.XD:
             return cls._generate_from_setting_using_xd(setting=setting)
-        elif cls.Backend(backend.lower()) is cls.Backend.NoSpherA2:
-            return cls._generate_from_setting_using_nosphera2(setting=setting)
+        elif cls.Backend(backend.lower()) is cls.Backend.olex2:
+            return cls._generate_from_setting_using_olex2(setting=setting)
         else:
             raise NotImplementedError
 
@@ -192,7 +198,7 @@ class PDFGrid(object):
             return cls._read_from_grid_file(xd_grd_file_path)
 
     @classmethod
-    def _generate_from_setting_using_nosphera2(cls, setting: SettingCase):
+    def _generate_from_setting_using_olex2(cls, setting: SettingCase):
         raise NotImplementedError
 
     @classmethod
@@ -255,9 +261,9 @@ class PositiveInspector(unittest.TestCase):
             with self.subTest('XD and olex2 report different positivity',
                               setting=setting):
                 grid_xd = PDFGrid.generate_from_setting(setting=setting)
-                grid_nosphera2 = PDFGrid.from_cube(setting=setting)
+                grid_olex2 = PDFGrid.from_cube(setting=setting)
                 self.assertEqual(grid_xd.is_positive_definite,
-                                 grid_nosphera2.is_positive_definite)
+                                 grid_olex2.is_positive_definite)
 
 
 if __name__ == '__main__':
