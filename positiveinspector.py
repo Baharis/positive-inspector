@@ -220,14 +220,13 @@ class PDFGrid(object):
                  y_lims: Iterable = (0., 1.),
                  z_lims: Iterable = (0., 1.)):
         self.array = array
-        self.x_min, self.x_max = x_lims[:2]
-        self.y_min, self.y_max = y_lims[:2]
-        self.z_min, self.z_max = z_lims[:2]
+        self.x_lims = np.array(x_lims[:2])
+        self.y_lims = np.array(y_lims[:2])
+        self.z_lims = np.array(z_lims[:2])
 
     @property
     def voxel_size(self):
-        return (self.x_max - self.x_min) * (self.y_max - self.y_min) * \
-               (self.z_max - self.z_min)
+        return self.x_lims.ptp() * self.y_lims.ptp() * self.z_lims.ptp()
 
     @property
     def integrated_probability(self):
