@@ -151,19 +151,40 @@ class SettingCase(MostlyDefaultDict):
 
 
 class SettingList(UserList):
+    """This class generates and stores individual `SettingCase`s"""
     @classmethod
     def where(cls, **kwargs: Iterable):
         """
-        Return an `AtomSettingsList` where every `kwarg`-key assumes values of
-        `kwarg`-value. Names of kwargs must match those of  `AtomSettingsCase`.
-        For three `kwargs` of length 1, 3, and 5, return an instance of
-        `AtomSettingsList` with 1*3*5=15 distinct `AtomSettingsCase`s.
+        Return a `SettingsList` with all possible `SettingCase`s such that
+        `SettingCase[k] == v[i]` for `k` in `kwargs` keys and
+        `v[i]` in iterable `v` of respective `kwargs` value.
+        `kwargs` keys must exactly match those of `SettingsCase` keys.
+        For example `SettingsList(**{'U11': [0,1], 'U22': [0,1,2], 'U33': [1]})`
+        will return a `SettingList` with 2 * 3 * 1 = 6 distinct `SettingsCase`s.
         """
         new = SettingList()
         for value_combination in itertools.product(*kwargs.values()):
             new_kwargs = {k: v for k, v in zip(kwargs.keys(), value_combination)}
             new.append(SettingCase(**new_kwargs))
         return new
+
+    @classmethod
+    def wheregex(cls, **kwargs: Iterable):
+        """
+        Return a `SettingsList` with all possible `SettingCase`s such that
+        `SettingCase[k] == v[i]` for `k` in `kwargs` keys and
+        `v[i]` in iterable `v` of respective `kwargs` value.
+        `kwargs` keys must be valid regex expression which match at least one
+        (but possibly many) `SettingsCase` keys.
+        For example `SettingsList(**{'C..2': [0,1], 'D[12]{4}': [0,1,2]})` will
+        return a `SettingList` with 2**3 * 3**5 = 1944 distinct `SettingsCase`s.
+        """
+        full_kwargs = {}
+        for kwarg_key, kwarg_value_iterable in kwargs.items():
+            for setting_case_key in SettingCase.DEFAULTS.keys():
+                if re.fullmatch(kwarg_key, setting_case_key):
+                    full_kwargs.update({setting_case_key: kwarg_value_iterable})
+        return cls.where(**full_kwargs)
 
 
 class PDFGrid(object):
@@ -271,17 +292,7 @@ class PDFGrid(object):
 class PositiveInspector(unittest.TestCase):
     """Test suite responsible for finding grids with specific values"""
     def test_grids_have_same_sign_for_variable_third_order_parameters(self):
-        possibilities = [0.01, 100.]
-        setting_list = SettingList.where(C111=possibilities,
-                                         C222=possibilities,
-                                         C333=possibilities,
-                                         C112=possibilities,
-                                         C122=possibilities,
-                                         C113=possibilities,
-                                         C133=possibilities,
-                                         C223=possibilities,
-                                         C233=possibilities,
-                                         C123=possibilities,)
+        setting_list = SettingList.wheregex(**{'C[123]{3}': [0.01, 100.]})
         for s in setting_list:
             with self.subTest('XD and olex2 map positivity differs', setting=s):
                 g1 = PDFGrid.generate_from_setting(setting=s, backend='xd')
@@ -290,22 +301,7 @@ class PositiveInspector(unittest.TestCase):
                                  g2.is_positive_definite)
 
     def test_grids_have_same_sign_for_variable_fourth_order_parameters(self):
-        possibilities = [0.01, 100.]
-        setting_list = SettingList.where(D1111=possibilities,
-                                         D2222=possibilities,
-                                         D3333=possibilities,
-                                         D1112=possibilities,
-                                         D1222=possibilities,
-                                         D1113=possibilities,
-                                         D1333=possibilities,
-                                         D2223=possibilities,
-                                         D2333=possibilities,
-                                         D1122=possibilities,
-                                         D1133=possibilities,
-                                         D2233=possibilities,
-                                         D1123=possibilities,
-                                         D1223=possibilities,
-                                         D1233=possibilities)
+        setting_list = SettingList.wheregex(**{'D[123]{4}': [0.01, 100.]})
         for s in setting_list:
             with self.subTest('XD and olex2 map positivity differs', setting=s):
                 g1 = PDFGrid.generate_from_setting(setting=s, backend='xd')
@@ -315,33 +311,7 @@ class PositiveInspector(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    setting_list = SettingList.where(
-        C111=[0.01],
-        C222=[0.01],
-        C333=[0.01],
-        C112=[0.01],
-        C122=[0.01],
-        C113=[0.01],
-        C133=[0.01],
-        C223=[0.01],
-        C233=[0.01],
-        C123=[0.01],
-        # D1111=[-10000, 10000],
-        # D2222=[-10000, 10000],
-        # D3333=[-10000, 10000],
-        # D1112=[-10000, 10000],
-        # D1222=[-10000, 10000],
-        # D1113=[-10000, 10000],
-        # D1333=[-10000, 10000],
-        # D2223=[-10000, 10000],
-        # D2333=[-10000, 10000],
-        # D1122=[-10000, 10000],
-        # D1133=[-10000, 10000],
-        # D2233=[-10000, 10000],
-        # D1123=[-10000, 10000],
-        # D1223=[-10000, 10000],
-        # D1233=[-10000, 10000],
-    )
+    setting_list = SettingList.wheregex(**{'[CD][1]+': [0.01, 10.0]})
     for setting_number, setting in enumerate(setting_list):
         g = PDFGrid.generate_from_setting(setting, backend='xd')
         print(g.voxel_volume)
