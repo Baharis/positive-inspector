@@ -98,7 +98,8 @@ class SettingCase(MostlyDefaultDict):
     }
     XD_TEMPLATE_INP_PATH = CURRENT_DIRECTORY.joinpath('xd_template.inp')
     XD_TEMPLATE_MAS_PATH = CURRENT_DIRECTORY.joinpath('xd_template.mas')
-    OLEX2_TEMPLATE_INS_PATH = CURRENT_DIRECTORY.joinpath('olex2_template.mas')
+    OLEX2_TEMPLATE_INS_PATH = CURRENT_DIRECTORY.joinpath('olex2_template.ins')
+    OLEX2_TEMPLATE_HKL_PATH = CURRENT_DIRECTORY.joinpath('olex2_template.hkl')
 
     @property
     def has_third_order_moments(self) -> bool:
@@ -137,10 +138,16 @@ class SettingCase(MostlyDefaultDict):
     @property
     def olex2_ins_file_contents(self) -> str:
         """string representation of `self`-based "olex2.res" file"""
-        with open(self.XD_TEMPLATE_MAS_PATH, 'r') as file:
+        with open(self.OLEX2_TEMPLATE_INS_PATH, 'r') as file:
             file_contents = file.read().format(**self.format_dict)
         return file_contents
 
+    @property
+    def olex2_hkl_file_contents(self) -> str:
+        """string representation of `self`-based "olex2.hkl" file"""
+        with open(self.OLEX2_TEMPLATE_HKL_PATH, 'r') as file:
+            file_contents = file.read().format(**self.format_dict)
+        return file_contents
 
 
 class SettingList(UserList):
