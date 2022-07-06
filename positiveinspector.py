@@ -2,6 +2,7 @@ import abc
 import itertools
 import os
 import pathlib
+import re
 import subprocess
 import tempfile
 import unittest
@@ -86,17 +87,32 @@ class SettingCase(MostlyDefaultDict):
     XD_TEMPLATE_INP_PATH = CURRENT_DIRECTORY.joinpath('xd_template.inp')
     XD_TEMPLATE_MAS_PATH = CURRENT_DIRECTORY.joinpath('xd_template.mas')
 
-    # TODO recompute Uijk and Uijkm from Cijk and Dijkm
+    @property
+    def has_third_order_moments(self) -> bool:
+        cijk_regex = re.compile(r'^C[1-3]{3}$')
+        return any([v != 0 for k, v in self.items() if cijk_regex.match(k)])
+
+    @property
+    def has_fourth_order_moments(self) -> bool:
+        dijkl_regex = re.compile(r'^D[1-3]{4}$')
+        return any([v != 0 for k, v in self.items() if dijkl_regex.match(k)])
+
+    @property
+    def format_dict(self) -> dict:
+        d = dict(self)
+        d['third_star'] = '*' if self.has_third_order_moments else ' '
+        d['fourth_star'] = '*' if self.has_fourth_order_moments else ' '
+        return d
 
     @property
     def xd_inp_file_contents(self) -> str:
         with open(self.XD_TEMPLATE_INP_PATH, 'r') as file:
-            return file.read().format(**self)
+            return file.read().format(**self.format_dict)
 
     @property
     def xd_mas_file_contents(self) -> str:
         with open(self.XD_TEMPLATE_MAS_PATH, 'r') as file:
-            return file.read().format(**self)
+            return file.read().format(**self.format_dict)
 
     @property
     def olex2_res_file_contents(self) -> str:
