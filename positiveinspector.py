@@ -238,25 +238,25 @@ class PDFGrid(object):
         self.z_lims = np.array(z_lims[:2])
 
     @property
-    def voxel_volume(self):
+    def voxel_volume(self) -> float:
         return self.x_lims.ptp() / (self.array.shape[0] - 1) * \
                self.y_lims.ptp() / (self.array.shape[1] - 1) * \
                self.z_lims.ptp() / (self.array.shape[2] - 1)
 
     @property
-    def integrated_probability(self):
+    def integrated_probability(self) -> float:
         return np.sum(self.array) * self.voxel_volume
 
     @property
-    def integrated_positive_probability(self):
+    def integrated_positive_probability(self) -> float:
         return np.sum(self.array[self.array > 0]) * self.voxel_volume
 
     @property
-    def integrated_negative_probability(self):
+    def integrated_negative_probability(self) -> float:
         return np.sum(self.array[self.array < 0]) * self.voxel_volume
 
     @property
-    def is_positive_definite(self):
+    def is_positive_definite(self) -> bool:
         return np.all(self.array >= 0)
 
     @property
