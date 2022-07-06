@@ -161,11 +161,11 @@ class PDFGrid(object):
         NoSpherA2 = 'nosphera2'
 
     @classmethod
-    def generate_from_setting(cls, setting: SettingCase, backend: str):
+    def generate_from_setting(cls, setting: SettingCase, backend: str = 'xd'):
         """Create an instance based `SettingCase` objects using `backend`"""
-        if cls.Backend(backend) is cls.Backend.XD:
+        if cls.Backend(backend.lower()) is cls.Backend.XD:
             return cls._generate_from_setting_using_xd(setting=setting)
-        elif cls.Backend(backend) is cls.Backend.NoSpherA2:
+        elif cls.Backend(backend.lower()) is cls.Backend.NoSpherA2:
             return cls._generate_from_setting_using_nosphera2(setting=setting)
         else:
             raise NotImplementedError
@@ -175,7 +175,6 @@ class PDFGrid(object):
         with tempfile.TemporaryDirectory() as temp_dir:
             xd_inp_file_path = pathlib.Path(temp_dir).joinpath('xd.inp')
             xd_mas_file_path = pathlib.Path(temp_dir).joinpath('xd.mas')
-            xd_out_file_path = pathlib.Path(temp_dir).joinpath('xd_pdf.out')
             xd_grd_file_path = pathlib.Path(temp_dir).joinpath('xd_pdf.grd')
             with open(xd_inp_file_path, 'w') as xd_inp_file:
                 xd_inp_file.write(setting.xd_inp_file_contents)
@@ -187,19 +186,8 @@ class PDFGrid(object):
             my_env.append(XD_DATADIR='/home/dtchon/XD')
             process = subprocess.Popen("xdpdf", shell=True, cwd=temp_dir,
                                        env=my_env, stdout=subprocess.DEVNULL)
-            process.wait(timeout=5)
-            with open(xd_out_file_path, 'r') as xd_out_file:
-                xd_out_file_contents = xd_out_file.read()
-
-            # TODO: TEMPORARY PART
-            for line in xd_out_file_contents.splitlines():
-                if 'PDF values range from' in line:
-                    minimum_value = float(line.split()[-4])
-                    if minimum_value < 0.0:
-                        print('negative minimum found')
-                        print(setting)
-                        assert False
-        return cls()
+            process.wait()
+            return cls._read_from_grid_file(xd_grd_file_path)
 
     @classmethod
     def _generate_from_setting_using_nosphera2(cls, setting: SettingCase):
@@ -211,6 +199,8 @@ class PDFGrid(object):
 
     @classmethod
     def _read_from_grid_file(cls, path: Union[str, pathlib.Path]):
+        with open(path, 'w') as grd_file:
+            pass
         raise NotImplementedError
 
     @property
