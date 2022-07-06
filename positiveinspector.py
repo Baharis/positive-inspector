@@ -8,7 +8,7 @@ import tempfile
 import unittest
 from collections import UserList, UserDict
 from decimal import Decimal
-from typing import Iterable
+from typing import Iterable, Union
 import numpy as np
 
 
@@ -16,6 +16,7 @@ CURRENT_DIRECTORY = pathlib.Path(__file__).resolve().parent
 
 
 class MostlyDefaultDict(UserDict, abc.ABC):
+    """Dictionary where most values have types and defaults pre-defined"""
     DEFAULTS: dict
 
     def __init__(self, **kwargs):
@@ -99,16 +100,19 @@ class SettingCase(MostlyDefaultDict):
 
     @property
     def has_third_order_moments(self) -> bool:
+        """True if any of the Cijk elements is non-zero, False otherwise"""
         cijk_regex = re.compile(r'^C[1-3]{3}$')
         return any([v != 0 for k, v in self.items() if cijk_regex.match(k)])
 
     @property
     def has_fourth_order_moments(self) -> bool:
+        """True if any of the Dijkl elements is non-zero, False otherwise"""
         dijkl_regex = re.compile(r'^D[1-3]{4}$')
         return any([v != 0 for k, v in self.items() if dijkl_regex.match(k)])
 
     @property
     def format_dict(self) -> dict:
+        """`self` dictionary with additional keywords used in template files"""
         d = dict(self)
         d['third_star'] = '*' if self.has_third_order_moments else ' '
         d['fourth_star'] = '*' if self.has_fourth_order_moments else ' '
@@ -116,16 +120,19 @@ class SettingCase(MostlyDefaultDict):
 
     @property
     def xd_inp_file_contents(self) -> str:
+        """string representation of `self`-based "xd.inp" file"""
         with open(self.XD_TEMPLATE_INP_PATH, 'r') as file:
             return file.read().format(**self.format_dict)
 
     @property
     def xd_mas_file_contents(self) -> str:
+        """string representation of `self`-based "xd.mas" file"""
         with open(self.XD_TEMPLATE_MAS_PATH, 'r') as file:
             return file.read().format(**self.format_dict)
 
     @property
     def olex2_res_file_contents(self) -> str:
+        """string representation of `self`-based "olex2.res" file"""
         return str()
 
 
@@ -146,12 +153,14 @@ class SettingList(UserList):
 
 
 class PDFGrid(object):
+    """Class handling reading, writing, and analysing grid and cube files"""
     def __init__(self):
         values: np.ndarray = np.zeros(1)
         negative_volume: float = 0.0
 
     @classmethod
-    def from_xd_cube(cls, setting: SettingCase):
+    def from_grid(cls, path: Union[str, pathlib.Path], setting: SettingCase):
+        """Create an instance based on grid file and `SettingCase` objects"""
         with tempfile.TemporaryDirectory() as temp_dir:
             xd_inp_file_path = pathlib.Path(temp_dir).joinpath('xd.inp')
             xd_mas_file_path = pathlib.Path(temp_dir).joinpath('xd.mas')
@@ -182,7 +191,8 @@ class PDFGrid(object):
         return cls()
 
     @classmethod
-    def from_nosphera2_cube(cls, setting: SettingCase):
+    def from_cube(cls, setting: SettingCase):
+        """Create an instance based on cube file and `SettingCase` objects"""
         return cls()
 
     @property
@@ -191,13 +201,14 @@ class PDFGrid(object):
 
 
 class PositiveInspector(unittest.TestCase):
+    """Test suite responsible for finding grids with specific values"""
     def test_grids_have_same_sign(self):
         setting_list: SettingList[SettingCase]
         for setting in setting_list:
             with self.subTest('XD and olex2 report different positivity',
                               setting=setting):
-                grid_xd = PDFGrid.from_xd_cube(setting=setting)
-                grid_nosphera2 = PDFGrid.from_nosphera2_cube(setting=setting)
+                grid_xd = PDFGrid.from_grid(setting=setting)
+                grid_nosphera2 = PDFGrid.from_cube(setting=setting)
                 self.assertEqual(grid_xd.is_positive_definite,
                                  grid_nosphera2.is_positive_definite)
 
@@ -235,5 +246,5 @@ if __name__ == '__main__':
     )
     for setting_number, setting in enumerate(setting_list):
         print(f'{setting_number} / {len(setting_list)}')
-        PDFGrid.from_xd_cube(setting)
+        PDFGrid.from_grid(setting)
 
