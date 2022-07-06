@@ -259,6 +259,14 @@ class PDFGrid(object):
     def is_positive_definite(self):
         return np.all(self.array >= 0)
 
+    @property
+    def summary(self) -> str:
+        return f'Σp|p>0= {self.integrated_positive_probability: 6.4e} \n'\
+               f'Σp|p<0= {self.integrated_negative_probability: 6.4e} \n'\
+               f'Σp=     {self.integrated_probability: 6.4e} \n'\
+               f'max(p)= {np.max(self.array): 6.4e} \n'\
+               f'min(p)= {np.min(self.array): 6.4e} '
+
 
 class PositiveInspector(unittest.TestCase):
     """Test suite responsible for finding grids with specific values"""
@@ -275,19 +283,16 @@ class PositiveInspector(unittest.TestCase):
 
 if __name__ == '__main__':
     setting_list = SettingList.where(
-        C111=[-1, 1],
-        C222=[-1, 1],
-        C333=[-1, 1],
-        C112=[-1, 1],
-        C122=[-1, 1],
-        C113=[-1, 1],
-        C133=[-1, 1],
-        C223=[-1, 1],
-        C233=[-1, 1],
-        C123=[-1, 1],
-        a=[1],
-        b=[1],
-        c=[1],
+        C111=[0.01],
+        C222=[0.01],
+        C333=[0.01],
+        C112=[0.01],
+        C122=[0.01],
+        C113=[0.01],
+        C133=[0.01],
+        C223=[0.01],
+        C233=[0.01],
+        C123=[0.01],
         # D1111=[-10000, 10000],
         # D2222=[-10000, 10000],
         # D3333=[-10000, 10000],
@@ -306,10 +311,6 @@ if __name__ == '__main__':
     )
     for setting_number, setting in enumerate(setting_list):
         g = PDFGrid.generate_from_setting(setting, backend='xd')
-        print(f'{setting_number} / {len(setting_list)}: '
-              f'Σp+={g.integrated_positive_probability:8.5f} '
-              f'Σp-={g.integrated_negative_probability:8.5f} '
-              f'Σp= {g.integrated_probability:8.5f}')
-
-
-
+        print(g.voxel_volume)
+        print(f'{setting_number} / {len(setting_list)}:')
+        print(g.summary)
