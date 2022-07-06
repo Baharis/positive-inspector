@@ -13,7 +13,86 @@ from typing import Iterable, Union
 import numpy as np
 
 
-CURRENT_DIRECTORY = pathlib.Path(__file__).resolve().parent
+OLEX2_TEMPLATE_HKL = """
+   1   0   0    1.00    1.00
+   0   1   0    1.00    1.00
+   0   0   1    1.00    1.00
+   0   0   0    0.00    0.00
+""".strip('\n')
+
+OLEX2_TEMPLATE_INS = """
+TITL PI
+CELL 0.71073 {a:9.6f} {b:9.6f} {c:9.6f} {al:9.6g} {be:9.6g} {ga:9.6g}
+ZERR 4 0.0 0.0 0.0 0.0 0.0 0.0
+LATT -1
+SFAC Fe
+UNIT 1
+
+L.S. 20
+PLAN  5
+CONF
+list 4
+MORE -1
+
+WGHT   0.00000
+FVAR   0.10000
+Fe1  1 {x:9.6f} {y:9.6f} {z:9.6f} 11.0 {U11:9.6f} {U22:9.6f} {U33:9.6f} {U12:9.6f} {U13:9.6f} {U23:9.6f}
+HKLF 4
+REM <olex2.extras>
+REM <anharmonics
+REM  <Fe1 Cijk="{C111:6.4e} {C112:6.4e} {C113:6.4e} {C122:6.4e} {C123:6.4e}
+REM  {C133:6.4e} {C222:6.4e} {C223:6.4e} {C233:6.4e} {C333:6.4e}" Dijkl="{D1111:6.4e}
+REM  {D1112:6.4e} {D1113:6.4e} {D1122:6.4e} {D1123:6.4e} {D1133:6.4e} {D1222:6.4e}
+REM  {D1223:6.4e} {D1233:6.4e} {D1333:6.4e} {D2222:6.4e} {D2223:6.4e} {D2233:6.4e}
+REM  {D2333:6.4e} {D3333:6.4e}">
+REM >
+REM </olex2.extras>
+""".strip('\n')
+
+XD_TEMPLATE_INP = """
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! <<< X D PARAMETER FILE >>> $Revision: 2016.01 (Jul 08 2016)$                !
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+XDPARFILE VERSION 2
+PI   MODEL  -1  4  0  0
+LIMITS nat  2000 ntx  31 lmx  4 nzz  30 nto  0 nsc  20 ntb  20 nov   2020
+USAGE        1  4  0  1  0  1  0  0  1  0  0  0  0  0
+  0.000000  0.000000  0.000000  0.000000  0.000000  0.000000  0.000000 0.000E+00
+  0.000000  0.000000  0.000000  0.000000  0.000000  0.000000
+Fe(1)     3 2    0   1   0 4  1  1 0  0   0  {x:9.6f}  {y:9.6f}  {z:9.6f} 1.0000
+  {U11:9.6f} {U22:9.6f} {U33:9.6f} {U12:9.6f} {U13:9.6f} {U23:9.6f}
+  {C111:9.6f} {C222:9.6f} {C333:9.6f} {C112:9.6f} {C122:9.6f}
+  {C113:9.6f} {C133:9.6f} {C223:9.6f} {C233:9.6f} {C123:9.6f}
+  {D1111:9.6f} {D2222:9.6f} {D3333:9.6f} {D1112:9.6f} {D1222:9.6f}
+  {D1113:9.6f} {D1333:9.6f} {D2223:9.6f} {D2333:9.6f} {D1122:9.6f}
+  {D1133:9.6f} {D2233:9.6f} {D1123:9.6f} {D1223:9.6f} {D1233:9.6f}
+ 1  1.000000  1.000000  1.000000  1.000000  1.000000  1.000000
+ 0.0000E+00 0.0000E+00 0.0000E+00 0.0000E+00 0.0000E+00 0.0000E+00 0.0000E+00
+ 0.0000E+00
+ 0.1000E+01
+""".strip('\n')
+
+XD_TEMPLATE_MAS = """
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! <<< X D MASTER FILE >>> $Revision: 2016.01 (Jul 08 2016)$                   !
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+TITLE PI
+CELL     {a:9.6f}  {b:9.6f}  {c:9.6f}  {al:9.6g}  {be:9.6g}  {ga:9.6g}
+WAVE     0.71073
+CELLSD    0.0000   0.0000   0.0000    0.000    0.000    0.000
+LATT   A P
+BANK   CR
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+MODULE *XDPDF
+SELECT atom Fe(1) scale 1.0 orth angstrom
+CUMORD *second {third_star}third {fourth_star}fourth
+GRID 3-points *cryst
+LIMITS xmin -{grid_radius:8.6f} xmax {grid_radius:8.6f} nx {grid_steps:d}
+LIMITS ymin -{grid_radius:8.6f} ymax {grid_radius:8.6f} ny {grid_steps:d}
+LIMITS zmin -{grid_radius:8.6f} zmax {grid_radius:8.6f} nz {grid_steps:d}
+END XDPDF
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+""".strip('\n')
 
 
 class MostlyDefaultDict(UserDict, abc.ABC):
@@ -96,10 +175,6 @@ class SettingCase(MostlyDefaultDict):
         'grid_radius': Decimal('1.0'),
         'grid_steps': 21,
     }
-    XD_TEMPLATE_INP_PATH = CURRENT_DIRECTORY.joinpath('xd_template.inp')
-    XD_TEMPLATE_MAS_PATH = CURRENT_DIRECTORY.joinpath('xd_template.mas')
-    OLEX2_TEMPLATE_INS_PATH = CURRENT_DIRECTORY.joinpath('olex2_template.ins')
-    OLEX2_TEMPLATE_HKL_PATH = CURRENT_DIRECTORY.joinpath('olex2_template.hkl')
 
     @property
     def has_third_order_moments(self) -> bool:
@@ -122,32 +197,24 @@ class SettingCase(MostlyDefaultDict):
         return d
 
     @property
-    def xd_inp_file_contents(self) -> str:
-        """string representation of `self`-based "xd.inp" file"""
-        with open(self.XD_TEMPLATE_INP_PATH, 'r') as file:
-            file_contents = file.read().format(**self.format_dict)
-        return file_contents
-
-    @property
-    def xd_mas_file_contents(self) -> str:
-        """string representation of `self`-based "xd.mas" file"""
-        with open(self.XD_TEMPLATE_MAS_PATH, 'r') as file:
-            file_contents = file.read().format(**self.format_dict)
-        return file_contents
+    def olex2_hkl_file_contents(self) -> str:
+        """string representation of `self`-based "olex2.hkl" file"""
+        return OLEX2_TEMPLATE_HKL.format(**self.format_dict)
 
     @property
     def olex2_ins_file_contents(self) -> str:
         """string representation of `self`-based "olex2.res" file"""
-        with open(self.OLEX2_TEMPLATE_INS_PATH, 'r') as file:
-            file_contents = file.read().format(**self.format_dict)
-        return file_contents
+        return OLEX2_TEMPLATE_INS.format(**self.format_dict)
 
     @property
-    def olex2_hkl_file_contents(self) -> str:
-        """string representation of `self`-based "olex2.hkl" file"""
-        with open(self.OLEX2_TEMPLATE_HKL_PATH, 'r') as file:
-            file_contents = file.read().format(**self.format_dict)
-        return file_contents
+    def xd_inp_file_contents(self) -> str:
+        """string representation of `self`-based "xd.inp" file"""
+        return XD_TEMPLATE_INP.format(**self.format_dict)
+
+    @property
+    def xd_mas_file_contents(self) -> str:
+        """string representation of `self`-based "xd.mas" file"""
+        return XD_TEMPLATE_MAS.format(**self.format_dict)
 
 
 class SettingList(UserList):
@@ -311,7 +378,7 @@ class PositiveInspector(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    setting_list = SettingList.wheregex(**{'[CD][1]+': [0.01, 10.0]})
+    setting_list = SettingList.wheregex(**{'[C][12]+': [0.001, 0.0]})
     for setting_number, setting in enumerate(setting_list):
         g = PDFGrid.generate_from_setting(setting, backend='xd')
         print(g.voxel_volume)
