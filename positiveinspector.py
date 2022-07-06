@@ -160,6 +160,8 @@ class PDFGrid(object):
         XD = 'xd'
         NoSpherA2 = 'nosphera2'
 
+    GRD_COMMENT_LINE_REGEX = re.compile(r'^!.+$', re.MULTILINE)
+
     @classmethod
     def generate_from_setting(cls, setting: SettingCase, backend: str = 'xd'):
         """Create an instance based `SettingCase` objects using `backend`"""
@@ -200,16 +202,48 @@ class PDFGrid(object):
     @classmethod
     def _read_from_grid_file(cls, path: Union[str, pathlib.Path]):
         with open(path, 'w') as grd_file:
-            pass
-        raise NotImplementedError
+            grd_file_lines = grd_file.readlines()
+        grd_non_empty_lines = [line for line in grd_file_lines if line.strip()
+                               and not cls.GRD_COMMENT_LINE_REGEX.match(line)]
+        x_steps, y_steps, z_steps = map(int, grd_non_empty_lines[2].split())
+        x_min, y_min, z_min = map(float, grd_non_empty_lines[3].split())
+        x_max, y_max, z_max = map(float, grd_non_empty_lines[4].split())
+        grd_entries = ' '.join(grd_non_empty_lines[11:]).split()
+        grd_values = np.array(grd_entries, dtype=float)
+        grd_array = grd_values.reshape((x_steps, y_steps, z_steps), order='F')
+        return cls(array=grd_array, x_lims=(x_min, x_max),
+                   y_lims=(y_min, y_max), z_lims=(z_min, z_max))
+
+    def __init__(self,
+                 array: np.ndarray,
+                 x_lims: Iterable = (0., 1.),
+                 y_lims: Iterable = (0., 1.),
+                 z_lims: Iterable = (0., 1.)):
+        self.array = array
+        self.x_min, self.x_max = x_lims[:2]
+        self.y_min, self.y_max = y_lims[:2]
+        self.z_min, self.z_max = z_lims[:2]
+
+    @property
+    def voxel_size(self):
+        return (self.x_max - self.x_min) * (self.y_max - self.y_min) * \
+               (self.z_max - self.z_min)
+
+    @property
+    def integrated_probability(self):
+        return np.sum(self.array) * self.voxel_size
+
+    @property
+    def integrated_positive_probability(self):
+        return np.sum(self.array[self.array >= 0]) * self.voxel_size
+
+    @property
+    def integrated_negative_probability(self):
+        return np.sum(self.array[self.array >= 0]) * self.voxel_size
 
     @property
     def is_positive_definite(self):
-        return bool()
-
-    def __init__(self):
-        values: np.ndarray = np.zeros(1)
-        negative_volume: float = 0.0
+        return np.all(self.array >= 0)
 
 
 class PositiveInspector(unittest.TestCase):
