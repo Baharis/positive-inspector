@@ -1,4 +1,5 @@
 import abc
+import enum
 import itertools
 import os
 import pathlib
@@ -154,13 +155,23 @@ class SettingList(UserList):
 
 class PDFGrid(object):
     """Class handling reading, writing, and analysing grid and cube files"""
-    def __init__(self):
-        values: np.ndarray = np.zeros(1)
-        negative_volume: float = 0.0
+
+    class Backend(enum.Enum):
+        XD = 'xd'
+        NoSpherA2 = 'nosphera2'
 
     @classmethod
-    def from_grid(cls, path: Union[str, pathlib.Path], setting: SettingCase):
-        """Create an instance based on grid file and `SettingCase` objects"""
+    def generate_from_setting(cls, setting: SettingCase, backend: str):
+        """Create an instance based `SettingCase` objects using `backend`"""
+        if cls.Backend(backend) is cls.Backend.XD:
+            return cls._generate_from_setting_using_xd(setting=setting)
+        elif cls.Backend(backend) is cls.Backend.NoSpherA2:
+            return cls._generate_from_setting_using_nosphera2(setting=setting)
+        else:
+            raise NotImplementedError
+
+    @classmethod
+    def _generate_from_setting_using_xd(cls, setting: SettingCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             xd_inp_file_path = pathlib.Path(temp_dir).joinpath('xd.inp')
             xd_mas_file_path = pathlib.Path(temp_dir).joinpath('xd.mas')
@@ -191,13 +202,24 @@ class PDFGrid(object):
         return cls()
 
     @classmethod
-    def from_cube(cls, setting: SettingCase):
-        """Create an instance based on cube file and `SettingCase` objects"""
-        return cls()
+    def _generate_from_setting_using_nosphera2(cls, setting: SettingCase):
+        raise NotImplementedError
+
+    @classmethod
+    def _read_from_cube_file(cls, path: Union[str, pathlib.Path]):
+        raise NotImplementedError
+
+    @classmethod
+    def _read_from_grid_file(cls, path: Union[str, pathlib.Path]):
+        raise NotImplementedError
 
     @property
     def is_positive_definite(self):
         return bool()
+
+    def __init__(self):
+        values: np.ndarray = np.zeros(1)
+        negative_volume: float = 0.0
 
 
 class PositiveInspector(unittest.TestCase):
@@ -207,7 +229,7 @@ class PositiveInspector(unittest.TestCase):
         for setting in setting_list:
             with self.subTest('XD and olex2 report different positivity',
                               setting=setting):
-                grid_xd = PDFGrid.from_grid(setting=setting)
+                grid_xd = PDFGrid.generate_from_setting(setting=setting)
                 grid_nosphera2 = PDFGrid.from_cube(setting=setting)
                 self.assertEqual(grid_xd.is_positive_definite,
                                  grid_nosphera2.is_positive_definite)
@@ -246,5 +268,5 @@ if __name__ == '__main__':
     )
     for setting_number, setting in enumerate(setting_list):
         print(f'{setting_number} / {len(setting_list)}')
-        PDFGrid.from_grid(setting)
+        PDFGrid.generate_from_setting(setting)
 
