@@ -270,15 +270,48 @@ class PDFGrid(object):
 
 class PositiveInspector(unittest.TestCase):
     """Test suite responsible for finding grids with specific values"""
-    def test_grids_have_same_sign(self):
-        setting_list: SettingList[SettingCase]
-        for setting in setting_list:
-            with self.subTest('XD and olex2 report different positivity',
-                              setting=setting):
-                grid_xd = PDFGrid.generate_from_setting(setting=setting)
-                grid_olex2 = PDFGrid.from_cube(setting=setting)
-                self.assertEqual(grid_xd.is_positive_definite,
-                                 grid_olex2.is_positive_definite)
+    def test_grids_have_same_sign_for_variable_third_order_parameters(self):
+        possibilities = [0.01, 100.]
+        setting_list = SettingList.where(C111=possibilities,
+                                         C222=possibilities,
+                                         C333=possibilities,
+                                         C112=possibilities,
+                                         C122=possibilities,
+                                         C113=possibilities,
+                                         C133=possibilities,
+                                         C223=possibilities,
+                                         C233=possibilities,
+                                         C123=possibilities,)
+        for s in setting_list:
+            with self.subTest('XD and olex2 map positivity differs', setting=s):
+                g1 = PDFGrid.generate_from_setting(setting=s, backend='xd')
+                g2 = PDFGrid.generate_from_setting(setting=s, backend='olex2')
+                self.assertEqual(g1.is_positive_definite,
+                                 g2.is_positive_definite)
+
+    def test_grids_have_same_sign_for_variable_fourth_order_parameters(self):
+        possibilities = [0.01, 100.]
+        setting_list = SettingList.where(D1111=possibilities,
+                                         D2222=possibilities,
+                                         D3333=possibilities,
+                                         D1112=possibilities,
+                                         D1222=possibilities,
+                                         D1113=possibilities,
+                                         D1333=possibilities,
+                                         D2223=possibilities,
+                                         D2333=possibilities,
+                                         D1122=possibilities,
+                                         D1133=possibilities,
+                                         D2233=possibilities,
+                                         D1123=possibilities,
+                                         D1223=possibilities,
+                                         D1233=possibilities)
+        for s in setting_list:
+            with self.subTest('XD and olex2 map positivity differs', setting=s):
+                g1 = PDFGrid.generate_from_setting(setting=s, backend='xd')
+                g2 = PDFGrid.generate_from_setting(setting=s, backend='olex2')
+                self.assertEqual(g1.is_positive_definite,
+                                 g2.is_positive_definite)
 
 
 if __name__ == '__main__':
