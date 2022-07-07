@@ -16,6 +16,7 @@ import numpy as np
 try:
     import olex
     from olexFunctions import OV
+    from cubes_maps import PDF_map
 except ImportError:  # Mock modules in development environment if not available
     olex = Mock()
     OV = Mock()
@@ -303,6 +304,9 @@ class PDFGrid(object):
     @classmethod
     def _generate_from_setting_using_olex2(cls, setting: SettingCase):
         raise NotImplementedError
+        file_name = os.path.join(cwd,"test_file.ins")
+        OV.Reap(file_name)
+        PDF_map(0.1,1.0,True,True,True,False,True)
 
     @classmethod
     def _read_from_cube_file(cls, path: Union[str, pathlib.Path]):
