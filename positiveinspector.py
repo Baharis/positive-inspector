@@ -8,6 +8,7 @@ import subprocess
 import tempfile
 from collections import UserList, UserDict
 from decimal import Decimal
+from numbers import Number
 from typing import Iterable, Union
 from unittest.mock import Mock
 import numpy as np
@@ -104,6 +105,16 @@ LIMITS zmin -{grid_radius:8.6f} zmax {grid_radius:8.6f} nz {grid_steps:d}
 END XDPDF
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 """.strip('\n')
+
+
+def a2b(value: Union[int, float, Number]) -> float:
+    """Convert `value` in Angstrom to Bohr"""
+    return value * 1.8897259886
+
+
+def b2a(value: Union[int, float, Number]) -> float:
+    """Convert `value` in Bohr to Angstrom"""
+    return value * 0.529177249
 
 
 class MostlyDefaultDict(UserDict, abc.ABC):
@@ -313,7 +324,7 @@ class PDFGrid(object):
             olex2_ins_file.write(setting.olex2_ins_file_contents)
         OV.Reap(str(olex2_ins_file_path))
         gss = 2 * setting['grid_radius'] / (setting['grid_steps'] - 1)
-        PDF_map(gss, setting['grid_radius'], True, True, True, False, True)
+        PDF_map(gss, setting['grid_radius'], True, True, True, True, True)
         return cls._read_from_cube_file(olex2_cube_file_path)
 
     @classmethod
