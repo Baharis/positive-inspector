@@ -424,6 +424,10 @@ def test_pdf_map_single_case():
         g1 = PDFGrid.generate_from_setting(setting=s, backend='xd')
         g2 = PDFGrid.generate_from_setting(setting=s, backend='olex2')
         results[i] = g1.is_positive_definite is g2.is_positive_definite
+        print('XD summary:')
+        print(g1.summary)
+        print('olex2 summary:')
+        print(g2.summary)
         print(f'Checked {i + 1:7d} / {len(results)} map pairs: '
               f'{len([r for r in results if r is True])} agree, '
               f'{len([r for r in results if r is False])} disagree.')
