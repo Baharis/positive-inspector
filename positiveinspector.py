@@ -6,7 +6,6 @@ import pathlib
 import re
 import subprocess
 import tempfile
-import unittest
 from collections import UserList, UserDict
 from decimal import Decimal
 from typing import Iterable, Union
@@ -404,30 +403,49 @@ class PDFGrid(object):
                f'min(p)= {np.min(self.array): 6.4e} '
 
 
-class PositiveInspector(unittest.TestCase):
-    """Test suite responsible for finding grids with specific values"""
-    def test_pdf_map_third_order(self):
-        setting_list = SettingList.wheregex(**{'C[123]{3}': [0.01, 100.]})
-        for s in setting_list:
-            with self.subTest('XD and olex2 map positivity differs', setting=s):
-                g1 = PDFGrid.generate_from_setting(setting=s, backend='xd')
-                g2 = PDFGrid.generate_from_setting(setting=s, backend='olex2')
-                self.assertEqual(g1.is_positive_definite,
-                                 g2.is_positive_definite)
-
-    def test_pdf_map_fourth_order(self):
-        setting_list = SettingList.wheregex(**{'D[123]{4}': [0.01, 100.]})
-        for s in setting_list:
-            with self.subTest('XD and olex2 map positivity differs', setting=s):
-                g1 = PDFGrid.generate_from_setting(setting=s, backend='xd')
-                g2 = PDFGrid.generate_from_setting(setting=s, backend='olex2')
-                self.assertEqual(g1.is_positive_definite,
-                                 g2.is_positive_definite)
+def parse_test_args_into_kwargs(args):
+    raise NotImplementedError
 
 
-ns = 'NoSpherA2'  # namespace
-OV.registerFunction(PositiveInspector.test_pdf_map_third_order, False, ns)
-OV.registerFunction(PositiveInspector.test_pdf_map_fourth_order, False, ns)
+def test_pdf_map_where(*args):
+    raise NotImplementedError
+
+
+def test_pdf_map_wheregex(*args):
+    raise NotImplementedError
+
+
+def test_pdf_map_third_order():
+    test_setting_list = SettingList.wheregex(**{'C[123]{3}': [0.01, 100.]})
+    results = [None, ] * len(test_setting_list)
+    print(f'Testing {len(results)} individual maps against each other')
+    for i, s in enumerate(test_setting_list):
+        g1 = PDFGrid.generate_from_setting(setting=s, backend='xd')
+        g2 = PDFGrid.generate_from_setting(setting=s, backend='olex2')
+        results[i] = g1.is_positive_definite is g2.is_positive_definite
+        if (i + 1) % 10 == int(len(results) / 10):
+            print(f'Checked {i + 1:7d} / {len(results)} map pairs: '
+                  f'{len([r for r in results if r is True])} agree, '
+                  f'{len([r for r in results if r is False])} disagree.')
+
+
+def test_pdf_map_fourth_order():
+    test_setting_list = SettingList.wheregex(**{'D[123]{4}': [0.01, 100.]})
+    results = [None, ] * len(test_setting_list)
+    print(f'Testing {len(results)} individual maps against each other')
+    for i, s in enumerate(test_setting_list):
+        g1 = PDFGrid.generate_from_setting(setting=s, backend='xd')
+        g2 = PDFGrid.generate_from_setting(setting=s, backend='olex2')
+        results[i] = g1.is_positive_definite is g2.is_positive_definite
+        if (i + 1) % 10 == int(len(results) / 10):
+            print(f'Checked {i + 1:7d} / {len(results)} map pairs: '
+                  f'{len([r for r in results if r is True])} agree, '
+                  f'{len([r for r in results if r is False])} disagree.')
+
+
+namespace = 'NoSpherA2'
+OV.registerFunction(test_pdf_map_third_order, False, namespace)
+OV.registerFunction(test_pdf_map_fourth_order, False, namespace)
 
 
 if __name__ == '__main__':
