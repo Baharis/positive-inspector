@@ -335,6 +335,18 @@ class PDFGrid(object):
         return cls(array=grd_array, x_lims=(x_min, x_max),
                    y_lims=(y_min, y_max), z_lims=(z_min, z_max))
 
+    @staticmethod
+    def _read_array_from_lines(lines: Iterable[str],
+                               order: str = 'C',
+                               shape: Iterable[int] = None) -> np.array:
+        entries = ' '.join(lines).split()
+        if shape is None:
+            shape = [int(round(len(entries) ** (1/3), 0)), ] * 3
+        if shape[0] * shape[1] * shape[2] != len(entries):
+            raise IndexError(f'Wrong shape {shape} for length {len(entries)}!')
+        values = np.array(entries, dtype=float)
+        return values.reshape(shape, order=order)
+
     def __init__(self,
                  array: np.ndarray,
                  x_lims: Iterable = (0., 1.),
