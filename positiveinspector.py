@@ -311,8 +311,9 @@ class PDFGrid(object):
                 olex2_hkl_file.write(setting.olex2_hkl_file_contents)
             with open(olex2_ins_file_path, 'w') as olex2_ins_file:
                 olex2_ins_file.write(setting.olex2_ins_file_contents)
-            OV.Reap(olex2_ins_file_path)
-            PDF_map(0.1, 1.0, True, True, True, False, True)
+            OV.Reap(str(olex2_ins_file_path))
+            gss = 2 * setting['grid_radius'] / (setting['grid_steps'] - 1)
+            PDF_map(gss, setting['grid_radius'], True, True, True, False, True)
             return cls._read_from_cube_file(olex2_cube_file_path)
 
     @classmethod
