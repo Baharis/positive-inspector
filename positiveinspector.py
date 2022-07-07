@@ -21,7 +21,6 @@ except ImportError:  # Mock modules in development environment if not available
     OV = Mock()
     PDF_map = Mock()
 
-
 TEMP_DIR = tempfile.TemporaryDirectory()
 
 OLEX2_TEMPLATE_HKL = """
@@ -252,7 +251,8 @@ class SettingList(UserList):
         """
         new = SettingList()
         for value_combination in itertools.product(*kwargs.values()):
-            new_kwargs = {k: v for k, v in zip(kwargs.keys(), value_combination)}
+            new_kwargs = {k: v for k, v in
+                          zip(kwargs.keys(), value_combination)}
             new.append(SettingCase(**new_kwargs))
         return new
 
@@ -338,9 +338,10 @@ class PDFGrid(object):
         x_step = float(cube_file_lines[3].split()[1])
         y_step = float(cube_file_lines[4].split()[2])
         z_step = float(cube_file_lines[5].split()[3])
-        array = cls._read_array_from_lines(lines=cube_file_lines[6+atom_count:],
-                                           shape=(x_steps, y_steps, z_steps),
-                                           order='C')
+        array = cls._read_array_from_lines(
+            lines=cube_file_lines[6 + atom_count:],
+            shape=(x_steps, y_steps, z_steps),
+            order='C')
         x_lims = b2a(np.array([x_min, x_min + (x_steps - 1) * x_step]))
         y_lims = b2a(np.array([y_min, y_min + (y_steps - 1) * y_step]))
         z_lims = b2a(np.array([z_min, z_min + (z_steps - 1) * z_step]))
@@ -367,7 +368,7 @@ class PDFGrid(object):
                                shape: Iterable[int] = None) -> np.array:
         entries = ' '.join(lines).split()
         if shape is None:
-            shape = [int(round(len(entries) ** (1/3), 0)), ] * 3
+            shape = [int(round(len(entries) ** (1 / 3), 0)), ] * 3
         if shape[0] * shape[1] * shape[2] != len(entries):
             raise IndexError(f'Wrong shape {shape} for length {len(entries)}!')
         values = np.array(entries, dtype=np.float64)
@@ -407,11 +408,17 @@ class PDFGrid(object):
 
     @property
     def summary(self) -> str:
-        return f'Σp|p>0= {self.integrated_positive_probability: 6.4e} \n'\
-               f'Σp|p<0= {self.integrated_negative_probability: 6.4e} \n'\
-               f'Σp=     {self.integrated_probability: 6.4e} \n'\
-               f'max(p)= {np.max(self.array): 6.4e} \n'\
-               f'min(p)= {np.min(self.array): 6.4e} '
+        tab = ' p:=PDF |       for p>0 |       for p<0 |     for all p \n' \
+              ' Int(p) | {intpp: 8.6e} | {intnp: 8.6e} | {int_p: 8.6e} \n' \
+              ' max|p| | {maxpp: 8.6e} | {minpp: 8.6e} | {mex_p: 8.6e} '
+        return tab.format(
+            intpp=self.integrated_positive_probability,
+            intnp=self.integrated_negative_probability,
+            int_p=self.integrated_probability,
+            maxpp=np.max(self.array),
+            minpp=np.max(-self.array),
+            mex_p=np.max(np.abs(self.array))
+        )
 
 
 def parse_test_args_into_kwargs(args):
@@ -473,7 +480,6 @@ namespace = 'NoSpherA2'
 OV.registerFunction(test_pdf_map_single_case, False, namespace)
 OV.registerFunction(test_pdf_map_third_order, False, namespace)
 OV.registerFunction(test_pdf_map_fourth_order, False, namespace)
-
 
 if __name__ == '__main__':
     setting_list = SettingList.wheregex(**{'[C][12]+': [0.000005, 0.0]})
