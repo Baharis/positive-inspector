@@ -410,28 +410,68 @@ class PDFGrid(object):
     def is_positive_definite(self) -> bool:
         return np.all(self.array >= 0)
 
+    def position_at(self, indexes: Iterable) -> np.ndarray:
+        x_index, y_index, z_index = indexes[:3]
+        x_percent = x_index / (self.array.shape[0] - 1)
+        y_percent = y_index / (self.array.shape[1] - 1)
+        z_percent = z_index / (self.array.shape[2] - 1)
+        x_pos = self.x_lims[0] * x_percent + self.x_lims[1] * (1 - x_percent)
+        y_pos = self.y_lims[0] * y_percent + self.y_lims[1] * (1 - y_percent)
+        z_pos = self.z_lims[0] * z_percent + self.z_lims[1] * (1 - z_percent)
+        return np.array([x_pos, y_pos, z_pos])
+
+    @property
+    def positive_peak_position(self):
+        ind = np.unravel_index(np.argmax(self.array), self.array.shape)
+        return self.position_at(ind)
+
+    @property
+    def negative_peak_position(self):
+        ind = np.unravel_index(np.argmin(self.array), self.array.shape)
+        return self.position_at(ind)
+
+    @property
+    def absolute_peak_position(self):
+        ind = np.unravel_index(np.argmax(np.abs(self.array)), self.array.shape)
+        return self.position_at(ind)
+
     @property
     def summary(self) -> str:
-        tab = '   p=PDF |       for p>0 |       for p<0 |     for all p \n' \
-              '  Int(p) | {intpp: 8.6e} | {intpn: 8.6e} | {intpa: 8.6e} \n' \
-              ' peak|p| | {maxpp: 8.6e} | {minpn: 8.6e} | {mexpa: 8.6e} \n' \
-              '  limits |             x |             y |             z \n' \
-              '     min | {xlim0: 8.6e} | {ylim0: 8.6e} | {zlim0: 8.6e} \n' \
-              '     max | {xlim1: 8.6e} | {ylim1: 8.6e} | {zlim1: 8.6e} '
-
-        return tab.format(
+        t = '               |       for p>0 |       for p<0 |     for all p\n' \
+            '  PDF Integral | {intpp: 8.6e} | {intpn: 8.6e} | {intpa: 8.6e}\n' \
+            '  PDF peak val | {valpp: 8.6e} | {valpn: 8.6e} | {valpa: 8.6e}\n' \
+            ' PDF peak xpos | {posxp: 8.6e} | {posxn: 8.6e} | {posxa: 8.6e}\n' \
+            ' PDF peak ypos | {posyp: 8.6e} | {posyn: 8.6e} | {posya: 8.6e}\n' \
+            ' PDF peak zpos | {poszp: 8.6e} | {poszn: 8.6e} | {posza: 8.6e}\n' \
+            '               |             x |             y |             z\n' \
+            ' map limit min | {lim0x: 8.6e} | {lim0y: 8.6e} | {lim0z: 8.6e}\n' \
+            ' map limit max | {lim1x: 8.6e} | {lim1y: 8.6e} | {lim1z: 8.6e}'
+        posp = self.positive_peak_position
+        posn = self.negative_peak_position
+        posa = self.absolute_peak_position
+        print(posp)
+        return t.format(
             intpp=self.integrated_positive_probability,
             intpn=self.integrated_negative_probability,
             intpa=self.integrated_probability,
-            maxpp=np.max(self.array),
-            minpn=np.max(-self.array),
-            mexpa=np.max(np.abs(self.array)),
-            xlim0=self.x_lims[0],
-            xlim1=self.x_lims[1],
-            ylim0=self.y_lims[0],
-            ylim1=self.y_lims[1],
-            zlim0=self.z_lims[0],
-            zlim1=self.z_lims[1],
+            valpp=np.max(self.array),
+            valpn=np.max(-self.array),
+            valpa=np.max(np.abs(self.array)),
+            posxp=posp[0],
+            posyp=posp[1],
+            poszp=posp[2],
+            posxn=posn[0],
+            posyn=posn[1],
+            poszn=posn[2],
+            posxa=posa[0],
+            posya=posa[1],
+            posza=posa[2],
+            lim0x=self.x_lims[0],
+            lim1x=self.x_lims[1],
+            lim0y=self.y_lims[0],
+            lim1y=self.y_lims[1],
+            lim0z=self.z_lims[0],
+            lim1z=self.z_lims[1],
         )
 
 
