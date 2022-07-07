@@ -20,6 +20,7 @@ try:
 except ImportError:  # Mock modules in development environment if not available
     olex = Mock()
     OV = Mock()
+    PDF_map = Mock()
 
 
 OLEX2_TEMPLATE_HKL = """
