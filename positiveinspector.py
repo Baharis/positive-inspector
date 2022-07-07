@@ -310,7 +310,11 @@ class PDFGrid(object):
         process = subprocess.Popen("xdpdf", shell=True, cwd=TEMP_DIR.name,
                                    env=my_env, stdout=subprocess.DEVNULL)
         process.wait()
-        return cls._read_from_grid_file(xd_grd_file_path)
+        new = cls._read_from_grid_file(xd_grd_file_path)
+        new.x_lims += float(setting['x'] * setting['a'] - setting['grid_radius'])
+        new.y_lims += float(setting['y'] * setting['b'] - setting['grid_radius'])
+        new.z_lims += float(setting['z'] * setting['c'] - setting['grid_radius'])
+        return new
 
     @classmethod
     def _generate_from_setting_using_olex2(cls, setting: SettingCase):
@@ -408,16 +412,26 @@ class PDFGrid(object):
 
     @property
     def summary(self) -> str:
-        tab = ' p:=PDF |       for p>0 |       for p<0 |     for all p \n' \
-              ' Int(p) | {intpp: 8.6e} | {intnp: 8.6e} | {int_p: 8.6e} \n' \
-              ' max|p| | {maxpp: 8.6e} | {minpp: 8.6e} | {mex_p: 8.6e} '
+        tab = '   p=PDF |       for p>0 |       for p<0 |     for all p \n' \
+              '  Int(p) | {intpp: 8.6e} | {intpn: 8.6e} | {intpa: 8.6e} \n' \
+              ' peak|p| | {maxpp: 8.6e} | {minpn: 8.6e} | {mexpa: 8.6e} \n' \
+              '  limits |             x |             y |             z \n' \
+              '     min | {xlim0: 8.6e} | {ylim0: 8.6e} | {zlim0: 8.6e} \n' \
+              '     max | {xlim1: 8.6e} | {ylim1: 8.6e} | {zlim1: 8.6e} '
+
         return tab.format(
             intpp=self.integrated_positive_probability,
-            intnp=self.integrated_negative_probability,
-            int_p=self.integrated_probability,
+            intpn=self.integrated_negative_probability,
+            intpa=self.integrated_probability,
             maxpp=np.max(self.array),
-            minpp=np.max(-self.array),
-            mex_p=np.max(np.abs(self.array))
+            minpn=np.max(-self.array),
+            mexpa=np.max(np.abs(self.array)),
+            xlim0=self.x_lims[0],
+            xlim1=self.x_lims[1],
+            ylim0=self.y_lims[0],
+            ylim1=self.y_lims[1],
+            zlim0=self.z_lims[0],
+            zlim1=self.z_lims[1],
         )
 
 
