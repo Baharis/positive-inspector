@@ -303,10 +303,17 @@ class PDFGrid(object):
 
     @classmethod
     def _generate_from_setting_using_olex2(cls, setting: SettingCase):
-        raise NotImplementedError
-        file_name = os.path.join(cwd,"test_file.ins")
-        OV.Reap(file_name)
-        PDF_map(0.1,1.0,True,True,True,False,True)
+        with tempfile.TemporaryDirectory() as temp_dir:
+            olex2_hkl_file_path = pathlib.Path(temp_dir).joinpath('olex2.hkl')
+            olex2_ins_file_path = pathlib.Path(temp_dir).joinpath('olex2.ins')
+            olex2_cube_file_path = pathlib.Path(temp_dir).joinpath('PDF.cube')
+            with open(olex2_hkl_file_path, 'w') as olex2_hkl_file:
+                olex2_hkl_file.write(setting.olex2_hkl_file_contents)
+            with open(olex2_ins_file_path, 'w') as olex2_ins_file:
+                olex2_ins_file.write(setting.olex2_ins_file_contents)
+            OV.Reap(olex2_ins_file_path)
+            PDF_map(0.1, 1.0, True, True, True, False, True)
+            return cls._read_from_cube_file(olex2_cube_file_path)
 
     @classmethod
     def _read_from_cube_file(cls, path: Union[str, pathlib.Path]):
