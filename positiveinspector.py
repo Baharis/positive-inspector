@@ -318,7 +318,23 @@ class PDFGrid(object):
 
     @classmethod
     def _read_from_cube_file(cls, path: Union[str, pathlib.Path]):
-        raise NotImplementedError
+        with open(path, 'r') as cube_file:
+            cube_file_lines = cube_file.readlines()
+        atom_count = int(cube_file_lines[2].split()[0])
+        _, x_min, y_min, z_min = map(float, cube_file_lines[2].split())
+        x_steps = int(cube_file_lines[3].split()[0])
+        y_steps = int(cube_file_lines[4].split()[0])
+        z_steps = int(cube_file_lines[5].split()[0])
+        x_step = float(cube_file_lines[3].split()[1])
+        y_step = float(cube_file_lines[4].split()[2])
+        z_step = float(cube_file_lines[5].split()[3])
+        array = cls._read_array_from_lines(lines=cube_file_lines[6+atom_count:],
+                                           shape=(x_steps, y_steps, z_steps),
+                                           order='C')
+        x_lims = (x_min, x_min + x_steps * x_step)
+        y_lims = (y_min, y_min + y_steps * y_step)
+        z_lims = (z_min, z_min + z_steps * z_step)
+        return cls(array=array, x_lims=x_lims, y_lims=y_lims, z_lims=z_lims)
 
     @classmethod
     def _read_from_grid_file(cls, path: Union[str, pathlib.Path]):
@@ -329,10 +345,10 @@ class PDFGrid(object):
         x_steps, y_steps, z_steps = map(int, grd_non_empty_lines[2].split())
         x_min, y_min, z_min = map(float, grd_non_empty_lines[3].split())
         x_max, y_max, z_max = map(float, grd_non_empty_lines[4].split())
-        grd_entries = ' '.join(grd_non_empty_lines[11:]).split()
-        grd_values = np.array(grd_entries, dtype=float)
-        grd_array = grd_values.reshape((x_steps, y_steps, z_steps), order='F')
-        return cls(array=grd_array, x_lims=(x_min, x_max),
+        array = cls._read_array_from_lines(lines=grd_non_empty_lines[11:],
+                                           shape=(x_steps, y_steps, z_steps),
+                                           order='F')
+        return cls(array=array, x_lims=(x_min, x_max),
                    y_lims=(y_min, y_max), z_lims=(z_min, z_max))
 
     @staticmethod
