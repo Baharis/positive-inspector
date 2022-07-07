@@ -326,7 +326,9 @@ class PDFGrid(object):
         with open(olex2_ins_file_path, 'w') as olex2_ins_file:
             olex2_ins_file.write(setting.olex2_ins_file_contents)
         OV.Reap(str(olex2_ins_file_path))
-        gss = 2 * setting['grid_radius'] / (setting['grid_steps'] - 1)
+        gss = 2 * setting['grid_radius'] / (setting['grid_steps'] - 1) + \
+              Decimal(1e-6)  # this makes a 100x100 grid for a=b=c=10, but only
+        # together w/ PDF gridding "mandatory_factors=[5, 5, 5], max_prime=1000"
         PDF_map(gss, setting['grid_radius'], True, True, True, True, True)
         return cls._read_from_cube_file(olex2_cube_file_path)
 
@@ -415,9 +417,9 @@ class PDFGrid(object):
         x_percent = x_index / (self.array.shape[0] - 1)
         y_percent = y_index / (self.array.shape[1] - 1)
         z_percent = z_index / (self.array.shape[2] - 1)
-        x_pos = self.x_lims[0] * x_percent + self.x_lims[1] * (1 - x_percent)
-        y_pos = self.y_lims[0] * y_percent + self.y_lims[1] * (1 - y_percent)
-        z_pos = self.z_lims[0] * z_percent + self.z_lims[1] * (1 - z_percent)
+        x_pos = self.x_lims[0] * (1 - x_percent) + self.x_lims[1] * x_percent
+        y_pos = self.y_lims[0] * (1 - y_percent) + self.y_lims[1] * y_percent
+        z_pos = self.z_lims[0] * (1 - z_percent) + self.z_lims[1] * z_percent
         return np.array([x_pos, y_pos, z_pos])
 
     @property
@@ -449,7 +451,6 @@ class PDFGrid(object):
         posp = self.positive_peak_position
         posn = self.negative_peak_position
         posa = self.absolute_peak_position
-        print(posp)
         return t.format(
             intpp=self.integrated_positive_probability,
             intpn=self.integrated_negative_probability,
