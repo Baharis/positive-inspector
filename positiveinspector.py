@@ -360,7 +360,7 @@ class PDFGrid(object):
             shape = [int(round(len(entries) ** (1/3), 0)), ] * 3
         if shape[0] * shape[1] * shape[2] != len(entries):
             raise IndexError(f'Wrong shape {shape} for length {len(entries)}!')
-        values = np.array(entries, dtype=float)
+        values = np.array(entries, dtype=np.float64)
         return values.reshape(shape, order=order)
 
     def __init__(self,
@@ -417,7 +417,7 @@ def test_pdf_map_wheregex(*args):
 
 
 def test_pdf_map_third_order():
-    test_setting_list = SettingList.wheregex(**{'C[123]{3}': [0.01, 100.]})
+    test_setting_list = SettingList.wheregex(**{'C[123]{3}': [0.000005, 0.0]})
     results = [None, ] * len(test_setting_list)
     print(f'Testing {len(results)} individual maps against each other')
     for i, s in enumerate(test_setting_list):
@@ -431,7 +431,7 @@ def test_pdf_map_third_order():
 
 
 def test_pdf_map_fourth_order():
-    test_setting_list = SettingList.wheregex(**{'D[123]{4}': [0.01, 100.]})
+    test_setting_list = SettingList.wheregex(**{'D[123]{4}': [0.000005, 0.0]})
     results = [None, ] * len(test_setting_list)
     print(f'Testing {len(results)} individual maps against each other')
     for i, s in enumerate(test_setting_list):
@@ -450,9 +450,8 @@ OV.registerFunction(test_pdf_map_fourth_order, False, namespace)
 
 
 if __name__ == '__main__':
-    setting_list = SettingList.wheregex(**{'[C][12]+': [0.001, 0.0]})
+    setting_list = SettingList.wheregex(**{'[C][12]+': [0.000005, 0.0]})
     for setting_number, setting in enumerate(setting_list):
         g = PDFGrid.generate_from_setting(setting, backend='xd')
-        print(g.voxel_volume)
         print(f'{setting_number} / {len(setting_list)}:')
         print(g.summary)
