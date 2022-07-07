@@ -341,9 +341,9 @@ class PDFGrid(object):
         array = cls._read_array_from_lines(lines=cube_file_lines[6+atom_count:],
                                            shape=(x_steps, y_steps, z_steps),
                                            order='C')
-        x_lims = (x_min, x_min + x_steps * x_step)
-        y_lims = (y_min, y_min + y_steps * y_step)
-        z_lims = (z_min, z_min + z_steps * z_step)
+        x_lims = b2a(np.array([x_min, x_min + (x_steps - 1) * x_step]))
+        y_lims = b2a(np.array([y_min, y_min + (y_steps - 1) * y_step]))
+        z_lims = b2a(np.array([z_min, z_min + (z_steps - 1) * z_step]))
         return cls(array=array, x_lims=x_lims, y_lims=y_lims, z_lims=z_lims)
 
     @classmethod
