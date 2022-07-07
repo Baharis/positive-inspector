@@ -22,6 +22,8 @@ except ImportError:  # Mock modules in development environment if not available
     PDF_map = Mock()
 
 
+TEMP_DIR = tempfile.TemporaryDirectory()
+
 OLEX2_TEMPLATE_HKL = """
    1   0   0    1.00    1.00
    0   1   0    1.00    1.00
@@ -284,37 +286,35 @@ class PDFGrid(object):
 
     @classmethod
     def _generate_from_setting_using_xd(cls, setting: SettingCase):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            xd_inp_file_path = pathlib.Path(temp_dir).joinpath('xd.inp')
-            xd_mas_file_path = pathlib.Path(temp_dir).joinpath('xd.mas')
-            xd_grd_file_path = pathlib.Path(temp_dir).joinpath('xd_pdf.grd')
-            with open(xd_inp_file_path, 'w') as xd_inp_file:
-                xd_inp_file.write(setting.xd_inp_file_contents)
-            with open(xd_mas_file_path, 'w') as xd_mas_file:
-                xd_mas_file.write(setting.xd_mas_file_contents)
+        xd_inp_file_path = pathlib.Path(TEMP_DIR.name).joinpath('xd.inp')
+        xd_mas_file_path = pathlib.Path(TEMP_DIR.name).joinpath('xd.mas')
+        xd_grd_file_path = pathlib.Path(TEMP_DIR.name).joinpath('xd_pdf.grd')
+        with open(xd_inp_file_path, 'w') as xd_inp_file:
+            xd_inp_file.write(setting.xd_inp_file_contents)
+        with open(xd_mas_file_path, 'w') as xd_mas_file:
+            xd_mas_file.write(setting.xd_mas_file_contents)
 
-            my_env = Environ()
-            my_env.append(PATH=str(pathlib.Path.home().joinpath('XD', 'bin')))
-            my_env.append(XD_DATADIR=str(pathlib.Path.home().joinpath('XD')))
-            process = subprocess.Popen("xdpdf", shell=True, cwd=temp_dir,
-                                       env=my_env, stdout=subprocess.DEVNULL)
-            process.wait()
-            return cls._read_from_grid_file(xd_grd_file_path)
+        my_env = Environ()
+        my_env.append(PATH=str(pathlib.Path.home().joinpath('XD', 'bin')))
+        my_env.append(XD_DATADIR=str(pathlib.Path.home().joinpath('XD')))
+        process = subprocess.Popen("xdpdf", shell=True, cwd=TEMP_DIR.name,
+                                   env=my_env, stdout=subprocess.DEVNULL)
+        process.wait()
+        return cls._read_from_grid_file(xd_grd_file_path)
 
     @classmethod
     def _generate_from_setting_using_olex2(cls, setting: SettingCase):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            olex2_hkl_file_path = pathlib.Path(temp_dir).joinpath('olex2.hkl')
-            olex2_ins_file_path = pathlib.Path(temp_dir).joinpath('olex2.ins')
-            olex2_cube_file_path = pathlib.Path(temp_dir).joinpath('PDF.cube')
-            with open(olex2_hkl_file_path, 'w') as olex2_hkl_file:
-                olex2_hkl_file.write(setting.olex2_hkl_file_contents)
-            with open(olex2_ins_file_path, 'w') as olex2_ins_file:
-                olex2_ins_file.write(setting.olex2_ins_file_contents)
-            OV.Reap(str(olex2_ins_file_path))
-            gss = 2 * setting['grid_radius'] / (setting['grid_steps'] - 1)
-            PDF_map(gss, setting['grid_radius'], True, True, True, False, True)
-            return cls._read_from_cube_file(olex2_cube_file_path)
+        olex2_hkl_file_path = pathlib.Path(TEMP_DIR.name).joinpath('olex2.hkl')
+        olex2_ins_file_path = pathlib.Path(TEMP_DIR.name).joinpath('olex2.ins')
+        olex2_cube_file_path = pathlib.Path(TEMP_DIR.name).joinpath('PDF.cube')
+        with open(olex2_hkl_file_path, 'w') as olex2_hkl_file:
+            olex2_hkl_file.write(setting.olex2_hkl_file_contents)
+        with open(olex2_ins_file_path, 'w') as olex2_ins_file:
+            olex2_ins_file.write(setting.olex2_ins_file_contents)
+        OV.Reap(str(olex2_ins_file_path))
+        gss = 2 * setting['grid_radius'] / (setting['grid_steps'] - 1)
+        PDF_map(gss, setting['grid_radius'], True, True, True, False, True)
+        return cls._read_from_cube_file(olex2_cube_file_path)
 
     @classmethod
     def _read_from_cube_file(cls, path: Union[str, pathlib.Path]):
