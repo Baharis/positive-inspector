@@ -8,7 +8,6 @@ import subprocess
 import tempfile
 from collections import UserList, UserDict
 from decimal import Decimal
-from numbers import Number
 from typing import Iterable, Union
 from unittest.mock import Mock
 import numpy as np
@@ -107,12 +106,12 @@ END XDPDF
 """.strip('\n')
 
 
-def a2b(value: Union[int, float, Number]) -> float:
+def a2b(value: Union[int, float, np.ndarray]) -> Union[float, np.ndarray]:
     """Convert `value` in Angstrom to Bohr"""
     return value * 1.8897259886
 
 
-def b2a(value: Union[int, float, Number]) -> float:
+def b2a(value: Union[int, float, np.ndarray]) -> Union[float, np.ndarray]:
     """Convert `value` in Bohr to Angstrom"""
     return value * 0.529177249
 
