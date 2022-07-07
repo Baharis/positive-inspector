@@ -416,6 +416,19 @@ def test_pdf_map_wheregex(*args):
     raise NotImplementedError
 
 
+def test_pdf_map_single_case():
+    test_setting_list = SettingList.wheregex(**{'C[123]{3}': [0.00001]})
+    results = [None, ] * len(test_setting_list)
+    print(f'Testing {len(results)} individual maps against each other')
+    for i, s in enumerate(test_setting_list):
+        g1 = PDFGrid.generate_from_setting(setting=s, backend='xd')
+        g2 = PDFGrid.generate_from_setting(setting=s, backend='olex2')
+        results[i] = g1.is_positive_definite is g2.is_positive_definite
+        print(f'Checked {i + 1:7d} / {len(results)} map pairs: '
+              f'{len([r for r in results if r is True])} agree, '
+              f'{len([r for r in results if r is False])} disagree.')
+
+
 def test_pdf_map_third_order():
     test_setting_list = SettingList.wheregex(**{'C[123]{3}': [0.000005, 0.0]})
     results = [None, ] * len(test_setting_list)
@@ -424,10 +437,9 @@ def test_pdf_map_third_order():
         g1 = PDFGrid.generate_from_setting(setting=s, backend='xd')
         g2 = PDFGrid.generate_from_setting(setting=s, backend='olex2')
         results[i] = g1.is_positive_definite is g2.is_positive_definite
-        if (i + 1) % 10 == int(len(results) / 10):
-            print(f'Checked {i + 1:7d} / {len(results)} map pairs: '
-                  f'{len([r for r in results if r is True])} agree, '
-                  f'{len([r for r in results if r is False])} disagree.')
+        print(f'Checked {i + 1:7d} / {len(results)} map pairs: '
+              f'{len([r for r in results if r is True])} agree, '
+              f'{len([r for r in results if r is False])} disagree.')
 
 
 def test_pdf_map_fourth_order():
@@ -438,13 +450,13 @@ def test_pdf_map_fourth_order():
         g1 = PDFGrid.generate_from_setting(setting=s, backend='xd')
         g2 = PDFGrid.generate_from_setting(setting=s, backend='olex2')
         results[i] = g1.is_positive_definite is g2.is_positive_definite
-        if (i + 1) % 10 == int(len(results) / 10):
-            print(f'Checked {i + 1:7d} / {len(results)} map pairs: '
-                  f'{len([r for r in results if r is True])} agree, '
-                  f'{len([r for r in results if r is False])} disagree.')
+        print(f'Checked {i + 1:7d} / {len(results)} map pairs: '
+              f'{len([r for r in results if r is True])} agree, '
+              f'{len([r for r in results if r is False])} disagree.')
 
 
 namespace = 'NoSpherA2'
+OV.registerFunction(test_pdf_map_single_case, False, namespace)
 OV.registerFunction(test_pdf_map_third_order, False, namespace)
 OV.registerFunction(test_pdf_map_fourth_order, False, namespace)
 
