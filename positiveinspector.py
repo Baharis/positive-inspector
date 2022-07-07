@@ -10,7 +10,15 @@ import unittest
 from collections import UserList, UserDict
 from decimal import Decimal
 from typing import Iterable, Union
+from unittest.mock import Mock
 import numpy as np
+
+try:
+    import olex
+    from olexFunctions import OV
+except ImportError:  # Mock modules in development environment if not available
+    olex = Mock()
+    OV = Mock()
 
 
 OLEX2_TEMPLATE_HKL = """
@@ -358,7 +366,7 @@ class PDFGrid(object):
 
 class PositiveInspector(unittest.TestCase):
     """Test suite responsible for finding grids with specific values"""
-    def test_grids_have_same_sign_for_variable_third_order_parameters(self):
+    def test_pdf_map_third_order(self):
         setting_list = SettingList.wheregex(**{'C[123]{3}': [0.01, 100.]})
         for s in setting_list:
             with self.subTest('XD and olex2 map positivity differs', setting=s):
@@ -367,7 +375,7 @@ class PositiveInspector(unittest.TestCase):
                 self.assertEqual(g1.is_positive_definite,
                                  g2.is_positive_definite)
 
-    def test_grids_have_same_sign_for_variable_fourth_order_parameters(self):
+    def test_pdf_map_fourth_order(self):
         setting_list = SettingList.wheregex(**{'D[123]{4}': [0.01, 100.]})
         for s in setting_list:
             with self.subTest('XD and olex2 map positivity differs', setting=s):
@@ -375,6 +383,11 @@ class PositiveInspector(unittest.TestCase):
                 g2 = PDFGrid.generate_from_setting(setting=s, backend='olex2')
                 self.assertEqual(g1.is_positive_definite,
                                  g2.is_positive_definite)
+
+
+ns = 'NoSpherA2'  # namespace
+OV.registerFunction(PositiveInspector.test_pdf_map_third_order, False, ns)
+OV.registerFunction(PositiveInspector.test_pdf_map_fourth_order, False, ns)
 
 
 if __name__ == '__main__':
