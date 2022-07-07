@@ -294,8 +294,8 @@ class PDFGrid(object):
                 xd_mas_file.write(setting.xd_mas_file_contents)
 
             my_env = Environ()
-            my_env.append(PATH='/home/dtchon/XD/bin')
-            my_env.append(XD_DATADIR='/home/dtchon/XD')
+            my_env.append(PATH=str(pathlib.Path.home().joinpath('XD', 'bin')))
+            my_env.append(XD_DATADIR=str(pathlib.Path.home().joinpath('XD')))
             process = subprocess.Popen("xdpdf", shell=True, cwd=temp_dir,
                                        env=my_env, stdout=subprocess.DEVNULL)
             process.wait()
