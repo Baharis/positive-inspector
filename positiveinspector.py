@@ -95,7 +95,7 @@ BANK   CR
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 MODULE *XDPDF
 SELECT atom Fe(1) scale 1.0 orth angstrom
-CUMORD *second {third_star}third {fourth_star}fourth
+CUMORD {star2}second {star3}third {star4}fourth
 GRID 3-points *cryst
 LIMITS xmin -{grid_radius:8.6f} xmax {grid_radius:8.6f} nx {grid_steps:d}
 LIMITS ymin -{grid_radius:8.6f} ymax {grid_radius:8.6f} ny {grid_steps:d}
@@ -194,16 +194,20 @@ class SettingCase(MostlyDefaultDict):
         # GRID SETTING
         'grid_radius': Decimal('1.0'),
         'grid_steps': 21,
+        # QUASI-MOMENTUM ORDER USED
+        'use_second': True,
+        'use_third': True,
+        'use_fourth': True,
     }
 
     @property
-    def has_third_order_moments(self) -> bool:
+    def has_third_order_moment_parameters(self) -> bool:
         """True if any of the Cijk elements is non-zero, False otherwise"""
         cijk_regex = re.compile(r'^C[1-3]{3}$')
         return any([v != 0 for k, v in self.items() if cijk_regex.match(k)])
 
     @property
-    def has_fourth_order_moments(self) -> bool:
+    def has_fourth_order_moment_parameters(self) -> bool:
         """True if any of the Dijkl elements is non-zero, False otherwise"""
         dijkl_regex = re.compile(r'^D[1-3]{4}$')
         return any([v != 0 for k, v in self.items() if dijkl_regex.match(k)])
@@ -212,8 +216,12 @@ class SettingCase(MostlyDefaultDict):
     def format_dict(self) -> dict:
         """`self` dictionary with additional keywords used in template files"""
         d = dict(self)
-        d['third_star'] = '*' if self.has_third_order_moments else ' '
-        d['fourth_star'] = '*' if self.has_fourth_order_moments else ' '
+        star2 = self['use_second']
+        star3 = self.has_third_order_moment_parameters and self['use_third']
+        star4 = self.has_fourth_order_moment_parameters and self['use_fourth']
+        d['star2'] = '*' if star2 else ' '
+        d['star3'] = '*' if star3 else ' '
+        d['star4'] = '*' if star4 else ' '
         return d
 
     @property
@@ -329,7 +337,8 @@ class PDFGrid(object):
         gss = 2 * setting['grid_radius'] / (setting['grid_steps'] - 1) + \
               Decimal(1e-6)  # this makes a 100x100 grid for a=b=c=10, but only
         # together w/ PDF gridding "mandatory_factors=[5, 5, 5], max_prime=1000"
-        PDF_map(gss, setting['grid_radius'], True, True, True, True, True)
+        PDF_map(gss, setting['grid_radius'], setting['use_second'],
+                setting['use_third'], setting['use_fourth'], True, True)
         return cls._read_from_cube_file(olex2_cube_file_path)
 
     @classmethod
@@ -489,7 +498,8 @@ def test_pdf_map_wheregex(*args):
 
 
 def test_pdf_map_single_case():
-    test_setting_list = SettingList.wheregex(**{'C[123]{3}': [0.00001]})
+    test_setting_list = SettingList.wheregex(**{'C111': [0.00001],
+                                                'use_second': [False]})
     results = [None, ] * len(test_setting_list)
     print(f'Testing {len(results)} individual maps against each other')
     for i, s in enumerate(test_setting_list):
