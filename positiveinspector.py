@@ -115,6 +115,10 @@ def b2a(value: Union[int, float, np.ndarray]) -> Union[float, np.ndarray]:
     return value * 0.529177249
 
 
+def interpret_string_booleans(s: str) -> Union[str, bool]:
+    return True if s.lower() == 'true' else False if s.lower() == 'false' else s
+
+
 class MostlyDefaultDict(UserDict, abc.ABC):
     """Dictionary where most values have types and defaults pre-defined"""
     DEFAULTS: dict
@@ -499,10 +503,10 @@ def _parse_test_pdf_map_args(args) -> dict:
         kwargs_key_string, kwargs_value_string = match.group(2, 4)
         if matching_brackets_regex.fullmatch(kwargs_value_string):
             kwargs_value_string = kwargs_value_string[1:-1]
-        kwargs_value_list = kwargs_value_string.split(',')
+        kwargs_value_list = [interpret_string_booleans(kwarg_value.strip())
+                             for kwarg_value in kwargs_value_string.split(',')]
         kwargs[kwargs_key_string] = kwargs_value_list
     return kwargs
-    # todo: independently treat "True" and "False"-like strings for booleans
 
 
 def _run_test_pdf_map(setting_list: SettingList) -> None:
