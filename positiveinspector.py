@@ -451,14 +451,14 @@ class PDFGrid(object):
     @property
     def summary(self) -> str:
         t = '               |       for p>0 |       for p<0 |     for all p\n' \
-            '  PDF Integral | {intpp: 8.6e} | {intpn: 8.6e} | {intpa: 8.6e}\n' \
-            '  PDF peak val | {valpp: 8.6e} | {valpn: 8.6e} | {valpa: 8.6e}\n' \
-            ' PDF peak xpos | {posxp: 8.6e} | {posxn: 8.6e} | {posxa: 8.6e}\n' \
-            ' PDF peak ypos | {posyp: 8.6e} | {posyn: 8.6e} | {posya: 8.6e}\n' \
-            ' PDF peak zpos | {poszp: 8.6e} | {poszn: 8.6e} | {posza: 8.6e}\n' \
+            '  PDF Integral | {intpp:13.5e} | {intpn:13.5e} | {intpa:13.5e}\n' \
+            '  PDF peak val | {valpp:13.5e} | {valpn:13.5e} | {valpa:13.5e}\n' \
+            ' PDF peak xpos | {posxp:13.5e} | {posxn:13.5e} | {posxa:13.5e}\n' \
+            ' PDF peak ypos | {posyp:13.5e} | {posyn:13.5e} | {posya:13.5e}\n' \
+            ' PDF peak zpos | {poszp:13.5e} | {poszn:13.5e} | {posza:13.5e}\n' \
             '               |             x |             y |             z\n' \
-            ' map limit min | {lim0x: 8.6e} | {lim0y: 8.6e} | {lim0z: 8.6e}\n' \
-            ' map limit max | {lim1x: 8.6e} | {lim1y: 8.6e} | {lim1z: 8.6e}'
+            ' map limit min | {lim0x:13.5e} | {lim0y:13.5e} | {lim0z:13.5e}\n' \
+            ' map limit max | {lim1x:13.5e} | {lim1y:13.5e} | {lim1z:13.5e}'
         posp = self.positive_peak_position
         posn = self.negative_peak_position
         posa = self.absolute_peak_position
