@@ -487,60 +487,47 @@ class PDFGrid(object):
         )
 
 
-def parse_test_args_into_kwargs(args):
+def _parse_test_pdf_map_args(args) -> dict:
     raise NotImplementedError
 
 
-def test_pdf_map_where(*args):
-    raise NotImplementedError
-
-
-def test_pdf_map_wheregex(*args):
-    raise NotImplementedError
-
-
-def test_pdf_map_single_case():
-    test_setting_list = SettingList.wheregex(**{'C111': [0.00001]})#,
-                                                #'use_second': [False]})
-    results = [None, ] * len(test_setting_list)
-    print(f'Testing {len(results)} individual maps against each other')
-    for i, s in enumerate(test_setting_list):
+def _run_test_pdf_map(setting_list: SettingList) -> None:
+    passed = [None, ] * len(setting_list)
+    print(f'Testing {len(passed)} individual maps against each other')
+    for i, s in enumerate(setting_list):
         g1 = PDFGrid.generate_from_setting(setting=s, backend='xd')
         g2 = PDFGrid.generate_from_setting(setting=s, backend='olex2')
-        results[i] = g1.is_positive_definite is g2.is_positive_definite
+        passed[i] = g1.is_positive_definite is g2.is_positive_definite
         print('XD summary:')
         print(g1.summary)
         print('olex2 summary:')
         print(g2.summary)
-        print(f'Checked {i + 1:7d} / {len(results)} map pairs: '
-              f'{len([r for r in results if r is True])} agree, '
-              f'{len([r for r in results if r is False])} disagree.')
+        print(f'Checked {i + 1:7d} / {len(passed)} map pairs: '
+              f'{len([r for r in passed if r is True])} agree, '
+              f'{len([r for r in passed if r is False])} disagree.')
 
 
-def test_pdf_map_third_order():
+def test_pdf_map_where(*args) -> None:
+    raise NotImplementedError
+
+
+def test_pdf_map_wheregex(*args) -> None:
+    raise NotImplementedError
+
+
+def test_pdf_map_single_case() -> None:
+    test_setting_list = SettingList.wheregex(**{'C111': [0.00001]})
+    _run_test_pdf_map(setting_list=test_setting_list)
+
+
+def test_pdf_map_third_order() -> None:
     test_setting_list = SettingList.wheregex(**{'C[123]{3}': [0.000005, 0.0]})
-    results = [None, ] * len(test_setting_list)
-    print(f'Testing {len(results)} individual maps against each other')
-    for i, s in enumerate(test_setting_list):
-        g1 = PDFGrid.generate_from_setting(setting=s, backend='xd')
-        g2 = PDFGrid.generate_from_setting(setting=s, backend='olex2')
-        results[i] = g1.is_positive_definite is g2.is_positive_definite
-        print(f'Checked {i + 1:7d} / {len(results)} map pairs: '
-              f'{len([r for r in results if r is True])} agree, '
-              f'{len([r for r in results if r is False])} disagree.')
+    _run_test_pdf_map(setting_list=test_setting_list)
 
 
-def test_pdf_map_fourth_order():
+def test_pdf_map_fourth_order() -> None:
     test_setting_list = SettingList.wheregex(**{'D[123]{4}': [0.000005, 0.0]})
-    results = [None, ] * len(test_setting_list)
-    print(f'Testing {len(results)} individual maps against each other')
-    for i, s in enumerate(test_setting_list):
-        g1 = PDFGrid.generate_from_setting(setting=s, backend='xd')
-        g2 = PDFGrid.generate_from_setting(setting=s, backend='olex2')
-        results[i] = g1.is_positive_definite is g2.is_positive_definite
-        print(f'Checked {i + 1:7d} / {len(results)} map pairs: '
-              f'{len([r for r in results if r is True])} agree, '
-              f'{len([r for r in results if r is False])} disagree.')
+    _run_test_pdf_map(setting_list=test_setting_list)
 
 
 namespace = 'NoSpherA2'
@@ -549,8 +536,8 @@ OV.registerFunction(test_pdf_map_third_order, False, namespace)
 OV.registerFunction(test_pdf_map_fourth_order, False, namespace)
 
 if __name__ == '__main__':
-    setting_list = SettingList.wheregex(**{'[C][12]+': [0.000005, 0.0]})
-    for setting_number, setting in enumerate(setting_list):
+    setting_list_ = SettingList.wheregex(**{'[C][12]+': [0.000005, 0.0]})
+    for setting_number_, setting in enumerate(setting_list_):
         g = PDFGrid.generate_from_setting(setting, backend='xd')
-        print(f'{setting_number} / {len(setting_list)}:')
+        print(f'{setting_number_} / {len(setting_list_)}:')
         print(g.summary)
