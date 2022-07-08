@@ -94,7 +94,7 @@ LATT   A P
 BANK   CR
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 MODULE *XDPDF
-SELECT atom Fe(1) scale 1.0 orth angstrom
+SELECT atom Fe(1) scale 1.0 orth *angstrom
 CUMORD {star2}second {star3}third {star4}fourth
 GRID 3-points *cryst
 LIMITS xmin -{grid_radius:8.6f} xmax {grid_radius:8.6f} nx {grid_steps:d}
@@ -500,8 +500,8 @@ def test_pdf_map_wheregex(*args):
 
 
 def test_pdf_map_single_case():
-    test_setting_list = SettingList.wheregex(**{'C111': [0.00001],
-                                                'use_second': [False]})
+    test_setting_list = SettingList.wheregex(**{'C111': [0.00001]})#,
+                                                #'use_second': [False]})
     results = [None, ] * len(test_setting_list)
     print(f'Testing {len(results)} individual maps against each other')
     for i, s in enumerate(test_setting_list):
