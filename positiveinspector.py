@@ -488,7 +488,21 @@ class PDFGrid(object):
 
 
 def _parse_test_pdf_map_args(args) -> dict:
-    raise NotImplementedError
+    matching_brackets_regex = re.compile(r"""^\([^)]+\)$|^\[[^]]+]$""")
+    quote_key_quote_value_regex = \
+        re.compile(r"""^(['"]?)([^"=]*)(\1)=(\([^)]+\)|\[[^]]+]|[^()[\]]+)$""")
+    kwargs = {}
+    for arg in args:
+        match = quote_key_quote_value_regex.fullmatch(arg)
+        if not match:
+            raise ValueError(f'Cannot interpret argument: {arg}')
+        kwargs_key_string, kwargs_value_string = match.group(2, 4)
+        if matching_brackets_regex.fullmatch(kwargs_value_string):
+            kwargs_value_string = kwargs_value_string[1:-1]
+        kwargs_value_list = kwargs_value_string.split(',')
+        kwargs[kwargs_key_string] = kwargs_value_list
+    return kwargs
+    # todo: independently treat "True" and "False"-like strings for booleans
 
 
 def _run_test_pdf_map(setting_list: SettingList) -> None:
@@ -508,11 +522,15 @@ def _run_test_pdf_map(setting_list: SettingList) -> None:
 
 
 def test_pdf_map_where(*args) -> None:
-    raise NotImplementedError
+    kwargs = _parse_test_pdf_map_args(args)
+    test_setting_list = SettingList.where(**kwargs)
+    _run_test_pdf_map(setting_list=test_setting_list)
 
 
 def test_pdf_map_wheregex(*args) -> None:
-    raise NotImplementedError
+    kwargs = _parse_test_pdf_map_args(args)
+    test_setting_list = SettingList.wheregex(**kwargs)
+    _run_test_pdf_map(setting_list=test_setting_list)
 
 
 def test_pdf_map_single_case() -> None:
@@ -531,9 +549,12 @@ def test_pdf_map_fourth_order() -> None:
 
 
 namespace = 'NoSpherA2'
+OV.registerFunction(test_pdf_map_where, False, namespace)
+OV.registerFunction(test_pdf_map_wheregex, False, namespace)
 OV.registerFunction(test_pdf_map_single_case, False, namespace)
-OV.registerFunction(test_pdf_map_third_order, False, namespace)
-OV.registerFunction(test_pdf_map_fourth_order, False, namespace)
+# OV.registerFunction(test_pdf_map_third_order, False, namespace)
+# OV.registerFunction(test_pdf_map_fourth_order, False, namespace)
+
 
 if __name__ == '__main__':
     setting_list_ = SettingList.wheregex(**{'[C][12]+': [0.000005, 0.0]})
