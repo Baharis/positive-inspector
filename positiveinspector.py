@@ -115,6 +115,17 @@ def b2a(value: Union[int, float, np.ndarray]) -> Union[float, np.ndarray]:
     return value * 0.529177249
 
 
+def hstack_strings(*strings: str) -> str:
+    """Position two multiline strings next to each other"""
+    widths = [max([len(l_) for l_ in string.split('\n')]) for string in strings]
+    heights = [len(string.split('\n')) for string in strings]
+    format_string = '     '.join(f'{{:{w}}}' for w in widths)
+    columns = [s.split('\n') for s in strings]
+    zip_ = itertools.zip_longest(*columns, fillvalue='')
+    rows = [format_string.format(*cells) for cells in zip_]
+    return '\n'.join(rows)
+
+
 def interpret_string_booleans(s: str) -> Union[str, bool]:
     return True if s.lower() == 'true' else False if s.lower() == 'false' else s
 
@@ -516,10 +527,8 @@ def _run_test_pdf_map(setting_list: SettingList) -> None:
         g1 = PDFGrid.generate_from_setting(setting=s, backend='xd')
         g2 = PDFGrid.generate_from_setting(setting=s, backend='olex2')
         passed[i] = g1.is_positive_definite is g2.is_positive_definite
-        print('XD summary:')
-        print(g1.summary)
-        print('olex2 summary:')
-        print(g2.summary)
+        print('XD summary:' + ' ' * 57 + 'olex2 summary:')
+        print(hstack_strings(g1.summary, g2.summary))
         print(f'Checked {i + 1:7d} / {len(passed)} map pairs: '
               f'{len([r for r in passed if r is True])} agree, '
               f'{len([r for r in passed if r is False])} disagree.')
