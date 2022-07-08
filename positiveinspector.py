@@ -131,7 +131,7 @@ def interpret_string_booleans(s: str) -> Union[str, bool]:
     return True if s.lower() == 'true' else False if s.lower() == 'false' else s
 
 
-def moment(array: np.ndarray, moment_: int, axis: int) \
+def moment(array: np.ndarray, moment_: int, axis: int = 0) \
         -> Union[float, np.ndarray]:
     """Calculate `moment`-th moment of `array` along `axis`. Source: scipy."""
     if moment_ == 0 or moment_ == 1:
@@ -519,6 +519,7 @@ class PDFGrid(object):
             ' PDF peak ypos | {posyp:13.5e} | {posyn:13.5e} | {posya:13.5e}\n' \
             ' PDF peak zpos | {poszp:13.5e} | {poszn:13.5e} | {posza:13.5e}\n' \
             '               |             x |             y |             z\n' \
+            '  PDF variance | {varpx:13.5e} | {varpy:13.5e} | {varpz:13.5e}\n' \
             '  PDF kurtosis | {kurpx:13.5e} | {kurpy:13.5e} | {kurpz:13.5e}\n' \
             ' map limit min | {lim0x:13.5e} | {lim0y:13.5e} | {lim0z:13.5e}\n' \
             ' map limit max | {lim1x:13.5e} | {lim1y:13.5e} | {lim1z:13.5e}'
@@ -541,6 +542,9 @@ class PDFGrid(object):
             posxa=posa[0],
             posya=posa[1],
             posza=posa[2],
+            varpx=np.var(self.array.mean(axis=(1, 2))),
+            varpy=np.var(self.array.mean(axis=(2, 0))),
+            varpz=np.var(self.array.mean(axis=(0, 1))),
             kurpx=kurtosis(array=self.array.mean(axis=(1, 2))),
             kurpy=kurtosis(array=self.array.mean(axis=(2, 0))),
             kurpz=kurtosis(array=self.array.mean(axis=(0, 1))),
@@ -551,6 +555,7 @@ class PDFGrid(object):
             lim0z=self.z_lims[0],
             lim1z=self.z_lims[1],
         )
+    #TODO: olex2 variance & kurtosis differ due to zero tails - trim grid
 
 
 def _parse_test_pdf_map_args(args) -> dict:
