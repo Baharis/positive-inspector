@@ -339,7 +339,9 @@ class PDFGrid(object):
         # together w/ PDF gridding "mandatory_factors=[5, 5, 5], max_prime=1000"
         PDF_map(gss, setting['grid_radius'], setting['use_second'],
                 setting['use_third'], setting['use_fourth'], True, True)
-        return cls._read_from_cube_file(olex2_cube_file_path)
+        new = cls._read_from_cube_file(olex2_cube_file_path)
+        new.array = new.array if setting['use_second'] else new.array / 1000.
+        return new
 
     @classmethod
     def _read_from_cube_file(cls, path: Union[str, pathlib.Path]):
