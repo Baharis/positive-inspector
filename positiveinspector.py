@@ -455,13 +455,20 @@ class PDFGrid(object):
 
     def __init__(self,
                  array: np.ndarray,
-                 x_lims: Iterable = (0., 1.),
-                 y_lims: Iterable = (0., 1.),
-                 z_lims: Iterable = (0., 1.)):
+                 origin: np.ndarray = np.array([0.0, 0.0, 0.0]),
+                 x_vector: np.ndarray = np.array([1.0, 0.0, 0.0]),
+                 y_vector: np.ndarray = np.array([1.0, 0.0, 0.0]),
+                 z_vector: np.ndarray = np.array([1.0, 0.0, 0.0])):
+        """
+        :param array: 3-dimensional array with PDF values at lattice points
+        :param origin: 3-element vector describing position of the 000 point
+        :param x_vector: 3-el. vector between subsequent lattice nodes in x dir.
+        :param y_vector: 3-el. vector between subsequent lattice nodes in y dir.
+        :param z_vector: 3-el. vector between subsequent lattice nodes in z dir.
+        """
         self.array = array
-        self.x_lims = np.array(x_lims[:2])
-        self.y_lims = np.array(y_lims[:2])
-        self.z_lims = np.array(z_lims[:2])
+        self.origin = origin
+        self.metric = np.vstack(x_vector, y_vector, z_vector)
 
     @property
     def array(self) -> np.ndarray:
@@ -470,6 +477,22 @@ class PDFGrid(object):
     @array.setter
     def array(self, value: np.ndarray):
         self._array = value
+
+    @property
+    def origin(self) -> np.ndarray:
+        return self._origin
+
+    @origin.setter
+    def origin(self, value: np.ndarray):
+        self._origin = value
+
+    @property
+    def metric(self) -> np.ndarray:
+        return self._metric
+
+    @metric.setter
+    def metric(self, value: np.ndarray):
+        self._metric = value
 
     @property
     def voxel_volume(self) -> float:
@@ -517,6 +540,13 @@ class PDFGrid(object):
     def absolute_peak_position(self):
         ind = np.unravel_index(np.argmax(np.abs(self.array)), self.array.shape)
         return self.position_at(ind)
+
+    # def trim(self,
+    #          x_lims: Iterable = (0., 1.),
+    #          y_lims: Iterable = (0., 1.),
+    #          z_lims: Iterable = (0., 1.),
+    #          tolerance: float = 1e-5):
+    #     for i
 
     @property
     def summary(self) -> str:
