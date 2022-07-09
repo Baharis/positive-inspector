@@ -496,9 +496,7 @@ class PDFGrid(object):
 
     @property
     def voxel_volume(self) -> float:
-        return self.x_lims.ptp() / (self.array.shape[0] - 1) * \
-               self.y_lims.ptp() / (self.array.shape[1] - 1) * \
-               self.z_lims.ptp() / (self.array.shape[2] - 1)
+        return np.linalg.det(self.metric)
 
     @property
     def integrated_probability(self) -> float:
