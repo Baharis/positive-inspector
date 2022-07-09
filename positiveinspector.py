@@ -701,11 +701,3 @@ OV.registerFunction(test_pdf_map_wheregex, False, namespace)
 OV.registerFunction(test_pdf_map_single_case, False, namespace)
 # OV.registerFunction(test_pdf_map_third_order, False, namespace)
 # OV.registerFunction(test_pdf_map_fourth_order, False, namespace)
-
-
-if __name__ == '__main__':
-    setting_list_ = SettingList.wheregex(**{'[C][12]+': [0.000005, 0.0]})
-    for setting_number_, setting in enumerate(setting_list_):
-        g = PDFGrid.generate_from_setting(setting, backend='xd')
-        print(f'{setting_number_} / {len(setting_list_)}:')
-        print(g.summary)
