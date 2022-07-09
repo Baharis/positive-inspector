@@ -214,9 +214,9 @@ class SettingCase(MostlyDefaultDict):
         'a': 10.0,
         'b': 10.0,
         'c': 10.0,
-        'al': 10.0,
-        'be': 10.0,
-        'ga': 10.0,
+        'al': 90.0,
+        'be': 90.0,
+        'ga': 90.0,
         # ATOM SETTING
         'x': 0.5,
         'y': 0.5,
@@ -284,6 +284,33 @@ class SettingCase(MostlyDefaultDict):
         d['star3'] = '*' if star3 else ' '
         d['star4'] = '*' if star4 else ' '
         return d
+
+    def base_vectors(self):
+        a, b, c = self['a'], self['b'], self['c']
+        sa, ca = np.sin(np.deg2rad(self['al'])), np.cos(np.deg2rad(self['al']))
+        sb, cb = np.sin(np.deg2rad(self['be'])), np.cos(np.deg2rad(self['be']))
+        sg, cg = np.sin(np.deg2rad(self['ga'])), np.cos(np.deg2rad(self['ga']))
+        v = a * b * c * np.sqrt(1 - ca**2 - cb**2 - cg**2 + 2 * ca * cb * cg)
+        a_vector = np.array([a, 0, 0])
+        b_vector = np.array([b * cg, b * sg, 0])
+        c_vector = np.array([c * cb, c * (ca - cb * cg) / sg, v / (a * b * sg)])
+        return a_vector, b_vector, c_vector
+
+    @property
+    def atom_position(self) -> np.ndarray:
+        av, bv, cv = self.base_vectors()
+        return self['x'] * av + self['y'] * bv + self['z'] * cv
+
+    @property
+    def origin_position(self) -> np.ndarray:
+        av, bv, cv, = self.base_vectors()
+        a, b, c, r = self['a'], self['b'], self['c'], self['grid_radius']
+        x, y, z = self['x'], self['y'], self['z']
+        return (x - r / a) * av + (y - r / b) * bv + (z - r / c) * cv
+
+    @property
+    def step_size(self) -> float:
+        return 2 * self['grid_radius'] / (self['grid_steps'] - 1)
 
     @property
     def olex2_hkl_file_contents(self) -> str:
@@ -380,12 +407,7 @@ class PDFGrid(object):
                                    env=my_env, stdout=subprocess.DEVNULL)
         process.wait()
         new = cls._read_from_grid_file(xd_grd_file_path)
-        origin_shift = np.array([
-            float(setting['x'] * setting['a'] - setting['grid_radius']),
-            float(setting['y'] * setting['b'] - setting['grid_radius']),
-            float(setting['z'] * setting['c'] - setting['grid_radius'])
-        ], dtype=np.float64)
-        new.origin += origin_shift
+        new.origin += setting.origin_position
         return new
 
     @classmethod
@@ -398,17 +420,14 @@ class PDFGrid(object):
         with open(olex2_ins_file_path, 'w') as olex2_ins_file:
             olex2_ins_file.write(setting.olex2_ins_file_contents)
         OV.Reap(str(olex2_ins_file_path))
-        grid_step_size = 2 * setting['grid_radius'] / \
-                         (setting['grid_steps'] - 1) + 1e-6
+        grid_step_size = setting.step_size + 1e-6
         # this step size makes olex2 create a 100-steps grid when a=b=c=10, but
         # only with PDF gridding "mandatory_factors=[5, 5, 5], max_prime=1000"
         PDF_map(grid_step_size, setting['grid_radius'], setting['use_second'],
                 setting['use_third'], setting['use_fourth'], True, True)
         new = cls._read_from_cube_file(olex2_cube_file_path)
         new.array = new.array if setting['use_second'] else new.array / 1000.
-        center = np.array([setting['a'] * setting['x'],
-                           setting['b'] * setting['y'],
-                           setting['c'] * setting['z']], dtype=np.float64)
+        center = setting.atom_position
         new = new.trim_around(center, radius=float(setting['grid_radius']))
         return new
 
