@@ -408,43 +408,39 @@ class PDFGrid(object):
     @classmethod
     def _read_from_cube_file(cls, path: Union[str, pathlib.Path]):
         with open(path, 'r') as cube_file:
-            cube_file_lines = cube_file.readlines()
-        atom_count = int(cube_file_lines[2].split()[0])
-        _, x_min, y_min, z_min = map(float, cube_file_lines[2].split())
-        x_steps = int(cube_file_lines[3].split()[0])
-        y_steps = int(cube_file_lines[4].split()[0])
-        z_steps = int(cube_file_lines[5].split()[0])
-        x_step = float(cube_file_lines[3].split()[1])
-        y_step = float(cube_file_lines[4].split()[2])
-        z_step = float(cube_file_lines[5].split()[3])
-        array = cls._read_array_from_lines(
-            lines=cube_file_lines[6 + atom_count:],
-            shape=(x_steps, y_steps, z_steps),
-            order='C')
-        x_lims = b2a(np.array([x_min, x_min + (x_steps - 1) * x_step]))
-        y_lims = b2a(np.array([y_min, y_min + (y_steps - 1) * y_step]))
-        z_lims = b2a(np.array([z_min, z_min + (z_steps - 1) * z_step]))
-        return cls(array=array, x_lims=x_lims, y_lims=y_lims, z_lims=z_lims)
+            file_lines = cube_file.readlines()
+        atom_count = int(file_lines[2].split()[0])
+        origin = np.array(file_lines[2].split()[1:], dtype=np.float64)
+        steps = [int(l_.split()[0]) for l_ in file_lines[3:6]]
+        x_vector = np.array(file_lines[3].split()[1:], dtype=np.float64)
+        y_vector = np.array(file_lines[4].split()[1:], dtype=np.float64)
+        z_vector = np.array(file_lines[5].split()[1:], dtype=np.float64)
+        array = cls._read_array_from_lines(file_lines[6 + atom_count:], steps, 'C')
+        return cls(array, origin, x_vector, y_vector, z_vector)
 
     @classmethod
     def _read_from_grid_file(cls, path: Union[str, pathlib.Path]):
         with open(path, 'r') as grd_file:
-            grd_file_lines = grd_file.readlines()
-        grd_non_empty_lines = [line for line in grd_file_lines if line.strip()
-                               and not cls.GRD_COMMENT_LINE_REGEX.match(line)]
-        x_steps, y_steps, z_steps = map(int, grd_non_empty_lines[2].split())
-        x_min, y_min, z_min = map(float, grd_non_empty_lines[3].split())
-        x_max, y_max, z_max = map(float, grd_non_empty_lines[4].split())
-        array = cls._read_array_from_lines(lines=grd_non_empty_lines[11:],
-                                           shape=(x_steps, y_steps, z_steps),
-                                           order='F')
-        return cls(array=array, x_lims=(x_min, x_max),
-                   y_lims=(y_min, y_max), z_lims=(z_min, z_max))
+            file_lines = grd_file.readlines()
+        non_empty_lines = [line for line in file_lines if line.strip()
+                           and not cls.GRD_COMMENT_LINE_REGEX.match(line)]
+        steps = np.array(non_empty_lines[2].split(), dtype=int)
+        origin = np.array(non_empty_lines[3].split(), dtype=np.float64)
+        lengths = np.array(non_empty_lines[4].split(), dtype=np.float64)
+        o_vec = np.array(non_empty_lines[6].split()[1:4], dtype=np.float64)
+        x_dir = np.array(non_empty_lines[7].split()[1:4], dtype=np.float64)
+        y_dir = np.array(non_empty_lines[8].split()[1:4], dtype=np.float64)
+        z_dir = np.array(non_empty_lines[9].split()[1:4], dtype=np.float64)
+        x_vector = x_dir * lengths[0] / (steps[0] - 1)
+        y_vector = y_dir * lengths[1] / (steps[1] - 1)
+        z_vector = z_dir * lengths[2] / (steps[2] - 1)
+        array = cls._read_array_from_lines(non_empty_lines[11:], steps, 'F')
+        return cls(array, origin + o_vec, x_vector, y_vector, z_vector)
 
     @staticmethod
     def _read_array_from_lines(lines: Iterable[str],
-                               order: str = 'C',
-                               shape: Iterable[int] = None) -> np.array:
+                               shape: Iterable[int] = None,
+                               order: str = 'C') -> np.array:
         entries = ' '.join(lines).split()
         if shape is None:
             shape = [int(round(len(entries) ** (1 / 3), 0)), ] * 3
