@@ -464,6 +464,14 @@ class PDFGrid(object):
         self.z_lims = np.array(z_lims[:2])
 
     @property
+    def array(self) -> np.ndarray:
+        return self._array
+
+    @array.setter
+    def array(self, value: np.ndarray):
+        self._array = value
+
+    @property
     def voxel_volume(self) -> float:
         return self.x_lims.ptp() / (self.array.shape[0] - 1) * \
                self.y_lims.ptp() / (self.array.shape[1] - 1) * \
