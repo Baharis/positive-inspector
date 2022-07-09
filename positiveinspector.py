@@ -106,12 +106,12 @@ END XDPDF
 """.strip('\n')
 
 
-def a2b(value: Union[int, float, np.ndarray]) -> Union[float, np.ndarray]:
+def a2b(value: Union[int, float, np.ndarray] = 1) -> Union[float, np.ndarray]:
     """Convert `value` in Angstrom to Bohr"""
     return value * 1.8897259886
 
 
-def b2a(value: Union[int, float, np.ndarray]) -> Union[float, np.ndarray]:
+def b2a(value: Union[int, float, np.ndarray] = 1) -> Union[float, np.ndarray]:
     """Convert `value` in Bohr to Angstrom"""
     return value * 0.529177249
 
@@ -414,11 +414,11 @@ class PDFGrid(object):
         with open(path, 'r') as cube_file:
             file_lines = cube_file.readlines()
         atom_count = int(file_lines[2].split()[0])
-        origin = np.array(file_lines[2].split()[1:], dtype=np.float64)
+        origin = b2a(np.array(file_lines[2].split()[1:], dtype=np.float64))
         steps = [int(l_.split()[0]) for l_ in file_lines[3:6]]
-        x_vector = np.array(file_lines[3].split()[1:], dtype=np.float64)
-        y_vector = np.array(file_lines[4].split()[1:], dtype=np.float64)
-        z_vector = np.array(file_lines[5].split()[1:], dtype=np.float64)
+        x_vector = b2a(np.array(file_lines[3].split()[1:], dtype=np.float64))
+        y_vector = b2a(np.array(file_lines[4].split()[1:], dtype=np.float64))
+        z_vector = b2a(np.array(file_lines[5].split()[1:], dtype=np.float64))
         array = cls._read_array_from_lines(file_lines[6 + atom_count:], steps, 'C')
         return cls(array, origin, x_vector, y_vector, z_vector)
 
@@ -466,9 +466,12 @@ class PDFGrid(object):
         :param y_vector: 3-el. vector between subsequent lattice nodes in y dir.
         :param z_vector: 3-el. vector between subsequent lattice nodes in z dir.
         """
+        self._array = np.zeros(shape=(10, 10, 10))
+        self._origin = np.array([0.0, 0.0, 0.0])
+        self._basis = np.eye(3)
         self.array = array
         self.origin = origin
-        self.basis = np.vstack(x_vector, y_vector, z_vector)
+        self.basis = np.vstack([x_vector, y_vector, z_vector])
 
     @property
     def array(self) -> np.ndarray:
