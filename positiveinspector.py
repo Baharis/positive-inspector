@@ -547,7 +547,7 @@ class PDFGrid(object):
         return indices @ self.basis + self.origin
 
     def position2indices(self, xyz: np.ndarray) -> np.ndarray:
-        return (xyz - self.origin) @ np.linalg.inv(self.basis)
+        return (xyz - self.origin) @ np.linalg.pinv(self.basis)  # inv crashes!
 
     @property
     def positive_peak_position(self):
@@ -573,7 +573,6 @@ class PDFGrid(object):
         x_ri = radius / np.linalg.norm(self.basis[0]) + tolerance
         y_ri = radius / np.linalg.norm(self.basis[1]) + tolerance
         z_ri = radius / np.linalg.norm(self.basis[2]) + tolerance
-        print('%%', x_0i, x_ri)
         x_mini = max(np.ceil(x_0i - x_ri).astype(int), 0)
         x_maxi = np.ceil(x_0i + x_ri).astype(int)
         y_mini = max(np.ceil(y_0i - y_ri).astype(int), 0)
@@ -633,7 +632,6 @@ class PDFGrid(object):
             lim0z=np.amin(self.z),
             lim1z=np.amax(self.z),
         )
-    #TODO: olex2 variance & kurtosis differ due to zero tails - trim grid
 
 
 def _parse_test_pdf_map_args(args) -> dict:
