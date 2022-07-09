@@ -407,6 +407,10 @@ class PDFGrid(object):
                 setting['use_third'], setting['use_fourth'], True, True)
         new = cls._read_from_cube_file(olex2_cube_file_path)
         new.array = new.array if setting['use_second'] else new.array / 1000.
+        center = np.array([setting['a'] * setting['x'],
+                           setting['b'] * setting['y'],
+                           setting['c'] * setting['z']], dtype=np.float64)
+        new = new.trim_around(center, radius=float(setting['grid_radius']))
         return new
 
     @classmethod
@@ -563,17 +567,21 @@ class PDFGrid(object):
     def trim_around(self,
              center: np.ndarray,
              radius: float,
-             tolerance: float = 1e-5):
+             tolerance: float = 1e-4):
         """Trim to `radius` with maximum norm of `self.basis` around `center`"""
-        x0i, y0i, z0i = self.position2indices(center)
-        xi, yi, zi = np.indices(self.array.shape)
-        xri = radius / np.linalg.norm(self.basis[0]) + tolerance
-        yri = radius / np.linalg.norm(self.basis[1]) + tolerance
-        zri = radius / np.linalg.norm(self.basis[2]) + tolerance
-        new_array = self.array[(x0i - xri <= xi) & (xi <= x0i + xri) &
-                               (y0i - yri <= yi) & (yi <= y0i + yri) &
-                               (z0i - zri <= zi) & (zi <= z0i + zri)]
-        new_origin = self.indices2position(new_array[0, 0, 0])
+        x_0i, y_0i, z_0i = self.position2indices(center)
+        x_ri = radius / np.linalg.norm(self.basis[0]) + tolerance
+        y_ri = radius / np.linalg.norm(self.basis[1]) + tolerance
+        z_ri = radius / np.linalg.norm(self.basis[2]) + tolerance
+        print('%%', x_0i, x_ri)
+        x_mini = max(np.ceil(x_0i - x_ri).astype(int), 0)
+        x_maxi = np.ceil(x_0i + x_ri).astype(int)
+        y_mini = max(np.ceil(y_0i - y_ri).astype(int), 0)
+        y_maxi = np.ceil(y_0i + y_ri).astype(int)
+        z_mini = max(np.ceil(z_0i - z_ri).astype(int), 0)
+        z_maxi = np.ceil(z_0i + z_ri).astype(int)
+        new_array = self.array[x_mini:x_maxi, y_mini:y_maxi, z_mini:z_maxi]
+        new_origin = self.indices2position(np.array([x_mini, y_mini, z_mini]))
         return self.__class__(new_array, new_origin, *self.basis)
 
     @property
@@ -587,6 +595,7 @@ class PDFGrid(object):
             '               |             x |             y |             z\n' \
             '  PDF variance | {varpx:13.5e} | {varpy:13.5e} | {varpz:13.5e}\n' \
             '  PDF kurtosis | {kurpx:13.5e} | {kurpy:13.5e} | {kurpz:13.5e}\n' \
+            ' map origin    | {ori_x:13.5e} | {ori_y:13.5e} | {ori_z:13.5e}\n' \
             ' map limit min | {lim0x:13.5e} | {lim0y:13.5e} | {lim0z:13.5e}\n' \
             ' map limit max | {lim1x:13.5e} | {lim1y:13.5e} | {lim1z:13.5e}'
         posp = self.positive_peak_position
@@ -614,6 +623,9 @@ class PDFGrid(object):
             kurpx=kurtosis(array=self.array.mean(axis=(1, 2))),
             kurpy=kurtosis(array=self.array.mean(axis=(2, 0))),
             kurpz=kurtosis(array=self.array.mean(axis=(0, 1))),
+            ori_x=self.origin[0],
+            ori_y=self.origin[1],
+            ori_z=self.origin[2],
             lim0x=np.amin(self.x),
             lim1x=np.amax(self.x),
             lim0y=np.amin(self.y),
