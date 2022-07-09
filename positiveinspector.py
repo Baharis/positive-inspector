@@ -468,7 +468,7 @@ class PDFGrid(object):
         """
         self.array = array
         self.origin = origin
-        self.metric = np.vstack(x_vector, y_vector, z_vector)
+        self.basis = np.vstack(x_vector, y_vector, z_vector)
 
     @property
     def array(self) -> np.ndarray:
@@ -487,16 +487,16 @@ class PDFGrid(object):
         self._origin = value
 
     @property
-    def metric(self) -> np.ndarray:
-        return self._metric
+    def basis(self) -> np.ndarray:
+        return self._basis
 
-    @metric.setter
-    def metric(self, value: np.ndarray):
-        self._metric = value
+    @basis.setter
+    def basis(self, value: np.ndarray):
+        self._basis = value
 
     @property
     def voxel_volume(self) -> float:
-        return np.linalg.det(self.metric)
+        return np.linalg.det(self.basis)
 
     @property
     def integrated_probability(self) -> float:
