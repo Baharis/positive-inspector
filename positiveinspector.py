@@ -477,6 +477,7 @@ class PDFGrid(object):
     @array.setter
     def array(self, value: np.ndarray):
         self._array = value
+        self._update_xyz()
 
     @property
     def origin(self) -> np.ndarray:
@@ -485,6 +486,7 @@ class PDFGrid(object):
     @origin.setter
     def origin(self, value: np.ndarray):
         self._origin = value
+        self._update_xyz()
 
     @property
     def basis(self) -> np.ndarray:
@@ -493,10 +495,30 @@ class PDFGrid(object):
     @basis.setter
     def basis(self, value: np.ndarray):
         self._basis = value
+        self._update_xyz()
 
     @property
     def voxel_volume(self) -> float:
         return np.linalg.det(self.basis)
+
+    def _update_xyz(self):
+        indices = np.indices(self._array.shape).reshape(3, -1).T  # [x,y,z] col
+        vectors = indices @ self._basis
+        self._x = vectors[:, 0].reshape(self._array.shape)
+        self._y = vectors[:, 1].reshape(self._array.shape)
+        self._z = vectors[:, 2].reshape(self._array.shape)
+
+    @property
+    def x(self) -> np.ndarray:
+        return self._x
+
+    @property
+    def y(self) -> np.ndarray:
+        return self._y
+
+    @property
+    def z(self) -> np.ndarray:
+        return self._z
 
     @property
     def integrated_probability(self) -> float:
