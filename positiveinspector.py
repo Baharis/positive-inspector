@@ -514,15 +514,8 @@ class PDFGrid(object):
     def is_positive_definite(self) -> bool:
         return np.all(self.array >= 0)
 
-    def position_at(self, indexes: Iterable) -> np.ndarray:
-        x_index, y_index, z_index = indexes[:3]
-        x_percent = x_index / (self.array.shape[0] - 1)
-        y_percent = y_index / (self.array.shape[1] - 1)
-        z_percent = z_index / (self.array.shape[2] - 1)
-        x_pos = self.x_lims[0] * (1 - x_percent) + self.x_lims[1] * x_percent
-        y_pos = self.y_lims[0] * (1 - y_percent) + self.y_lims[1] * y_percent
-        z_pos = self.z_lims[0] * (1 - z_percent) + self.z_lims[1] * z_percent
-        return np.array([x_pos, y_pos, z_pos])
+    def position_at(self, indices: np.ndarray) -> np.ndarray:
+        return indices @ self.basis
 
     @property
     def positive_peak_position(self):
