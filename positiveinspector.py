@@ -401,7 +401,6 @@ class PDFGrid(object):
         OV.Reap(str(olex2_ins_file_path))
         grid_step_size = 2 * setting['grid_radius'] / \
                          (setting['grid_steps'] - 1) + Decimal(1e-6)
-
         # this step size makes olex2 create a 100-steps grid when a=b=c=10, but
         # only with PDF gridding "mandatory_factors=[5, 5, 5], max_prime=1000"
         PDF_map(grid_step_size, setting['grid_radius'], setting['use_second'],
@@ -537,30 +536,42 @@ class PDFGrid(object):
     def is_positive_definite(self) -> bool:
         return np.all(self.array >= 0)
 
-    def position_at(self, indices: np.ndarray) -> np.ndarray:
-        return indices @ self.basis
+    def indices2position(self, indices: np.ndarray) -> np.ndarray:
+        return indices @ self.basis + self.origin
+
+    def position2indices(self, xyz: np.ndarray) -> np.ndarray:
+        return (xyz - self.origin) @ np.linalg.inv(self.basis)
 
     @property
     def positive_peak_position(self):
         ind = np.unravel_index(np.argmax(self.array), self.array.shape)
-        return self.position_at(ind)
+        return self.indices2position(np.array(ind))
 
     @property
     def negative_peak_position(self):
         ind = np.unravel_index(np.argmin(self.array), self.array.shape)
-        return self.position_at(ind)
+        return self.indices2position(np.array(ind))
 
     @property
     def absolute_peak_position(self):
         ind = np.unravel_index(np.argmax(np.abs(self.array)), self.array.shape)
-        return self.position_at(ind)
+        return self.indices2position(np.array(ind))
 
-    # def trim(self,
-    #          x_lims: Iterable = (0., 1.),
-    #          y_lims: Iterable = (0., 1.),
-    #          z_lims: Iterable = (0., 1.),
-    #          tolerance: float = 1e-5):
-    #     for i
+    def trim_around(self,
+             center: np.ndarray,
+             radius: float,
+             tolerance: float = 1e-5):
+        """Trim to `radius` with maximum norm of `self.basis` around `center`"""
+        x0i, y0i, z0i = self.position2indices(center)
+        xi, yi, zi = np.indices(self.array.shape)
+        xri = radius / np.linalg.norm(self.basis[0]) + tolerance
+        yri = radius / np.linalg.norm(self.basis[1]) + tolerance
+        zri = radius / np.linalg.norm(self.basis[2]) + tolerance
+        new_array = self.array[(x0i - xri <= xi) & (xi <= x0i + xri) &
+                               (y0i - yri <= yi) & (yi <= y0i + yri) &
+                               (z0i - zri <= zi) & (zi <= z0i + zri)]
+        new_origin = self.indices2position(new_array[0, 0, 0])
+        return self.__class__(new_array, new_origin, *self.basis)
 
     @property
     def summary(self) -> str:
@@ -600,12 +611,12 @@ class PDFGrid(object):
             kurpx=kurtosis(array=self.array.mean(axis=(1, 2))),
             kurpy=kurtosis(array=self.array.mean(axis=(2, 0))),
             kurpz=kurtosis(array=self.array.mean(axis=(0, 1))),
-            lim0x=self.x_lims[0],
-            lim1x=self.x_lims[1],
-            lim0y=self.y_lims[0],
-            lim1y=self.y_lims[1],
-            lim0z=self.z_lims[0],
-            lim1z=self.z_lims[1],
+            lim0x=np.amin(self.x),
+            lim1x=np.amax(self.x),
+            lim0y=np.amin(self.y),
+            lim1y=np.amax(self.y),
+            lim0z=np.amin(self.z),
+            lim1z=np.amax(self.z),
         )
     #TODO: olex2 variance & kurtosis differ due to zero tails - trim grid
 
