@@ -381,9 +381,12 @@ class PDFGrid(object):
                                    env=my_env, stdout=subprocess.DEVNULL)
         process.wait()
         new = cls._read_from_grid_file(xd_grd_file_path)
-        new.x_lims += float(setting['x'] * setting['a'] - setting['grid_radius'])
-        new.y_lims += float(setting['y'] * setting['b'] - setting['grid_radius'])
-        new.z_lims += float(setting['z'] * setting['c'] - setting['grid_radius'])
+        origin_shift = np.array([
+            float(setting['x'] * setting['a'] - setting['grid_radius']),
+            float(setting['y'] * setting['b'] - setting['grid_radius']),
+            float(setting['z'] * setting['c'] - setting['grid_radius'])
+        ], dtype=np.float64)
+        new.origin += origin_shift
         return new
 
     @classmethod
@@ -396,10 +399,12 @@ class PDFGrid(object):
         with open(olex2_ins_file_path, 'w') as olex2_ins_file:
             olex2_ins_file.write(setting.olex2_ins_file_contents)
         OV.Reap(str(olex2_ins_file_path))
-        gss = 2 * setting['grid_radius'] / (setting['grid_steps'] - 1) + \
-              Decimal(1e-6)  # this makes a 100x100 grid for a=b=c=10, but only
-        # together w/ PDF gridding "mandatory_factors=[5, 5, 5], max_prime=1000"
-        PDF_map(gss, setting['grid_radius'], setting['use_second'],
+        grid_step_size = 2 * setting['grid_radius'] / \
+                         (setting['grid_steps'] - 1) + Decimal(1e-6)
+
+        # this step size makes olex2 create a 100-steps grid when a=b=c=10, but
+        # only with PDF gridding "mandatory_factors=[5, 5, 5], max_prime=1000"
+        PDF_map(grid_step_size, setting['grid_radius'], setting['use_second'],
                 setting['use_third'], setting['use_fourth'], True, True)
         new = cls._read_from_cube_file(olex2_cube_file_path)
         new.array = new.array if setting['use_second'] else new.array / 1000.
