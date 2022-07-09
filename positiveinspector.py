@@ -7,7 +7,6 @@ import re
 import subprocess
 import tempfile
 from collections import UserList, UserDict
-from decimal import Decimal
 from typing import Iterable, Union
 from unittest.mock import Mock
 import numpy as np
@@ -212,49 +211,49 @@ class SettingCase(MostlyDefaultDict):
 
     DEFAULTS = {
         # UNIT CELL SETTING
-        'a': Decimal('10.0'),
-        'b': Decimal('10.0'),
-        'c': Decimal('10.0'),
-        'al': Decimal('90'),
-        'be': Decimal('90'),
-        'ga': Decimal('90'),
+        'a': 10.0,
+        'b': 10.0,
+        'c': 10.0,
+        'al': 10.0,
+        'be': 10.0,
+        'ga': 10.0,
         # ATOM SETTING
-        'x': Decimal('0.5'),
-        'y': Decimal('0.5'),
-        'z': Decimal('0.5'),
-        'U11': Decimal('0.01'),
-        'U22': Decimal('0.01'),
-        'U33': Decimal('0.01'),
-        'U12': Decimal('0.0'),
-        'U13': Decimal('0.0'),
-        'U23': Decimal('0.0'),
-        'C111': Decimal('0.0'),
-        'C222': Decimal('0.0'),
-        'C333': Decimal('0.0'),
-        'C112': Decimal('0.0'),
-        'C122': Decimal('0.0'),
-        'C113': Decimal('0.0'),
-        'C133': Decimal('0.0'),
-        'C223': Decimal('0.0'),
-        'C233': Decimal('0.0'),
-        'C123': Decimal('0.0'),
-        'D1111': Decimal('0.0'),
-        'D2222': Decimal('0.0'),
-        'D3333': Decimal('0.0'),
-        'D1112': Decimal('0.0'),
-        'D1222': Decimal('0.0'),
-        'D1113': Decimal('0.0'),
-        'D1333': Decimal('0.0'),
-        'D2223': Decimal('0.0'),
-        'D2333': Decimal('0.0'),
-        'D1122': Decimal('0.0'),
-        'D1133': Decimal('0.0'),
-        'D2233': Decimal('0.0'),
-        'D1123': Decimal('0.0'),
-        'D1223': Decimal('0.0'),
-        'D1233': Decimal('0.0'),
+        'x': 0.5,
+        'y': 0.5,
+        'z': 0.5,
+        'U11': 0.01,
+        'U22': 0.01,
+        'U33': 0.01,
+        'U12': 0.0,
+        'U13': 0.0,
+        'U23': 0.0,
+        'C111': 0.0,
+        'C222': 0.0,
+        'C333': 0.0,
+        'C112': 0.0,
+        'C122': 0.0,
+        'C113': 0.0,
+        'C133': 0.0,
+        'C223': 0.0,
+        'C233': 0.0,
+        'C123': 0.0,
+        'D1111': 0.0,
+        'D2222': 0.0,
+        'D3333': 0.0,
+        'D1112': 0.0,
+        'D1222': 0.0,
+        'D1113': 0.0,
+        'D1333': 0.0,
+        'D2223': 0.0,
+        'D2333': 0.0,
+        'D1122': 0.0,
+        'D1133': 0.0,
+        'D2233': 0.0,
+        'D1123': 0.0,
+        'D1223': 0.0,
+        'D1233': 0.0,
         # GRID SETTING
-        'grid_radius': Decimal('1.0'),
+        'grid_radius': 1.0,
         'grid_steps': 21,
         # QUASI-MOMENTUM ORDER USED
         'use_second': True,
@@ -400,7 +399,7 @@ class PDFGrid(object):
             olex2_ins_file.write(setting.olex2_ins_file_contents)
         OV.Reap(str(olex2_ins_file_path))
         grid_step_size = 2 * setting['grid_radius'] / \
-                         (setting['grid_steps'] - 1) + Decimal(1e-6)
+                         (setting['grid_steps'] - 1) + 1e-6
         # this step size makes olex2 create a 100-steps grid when a=b=c=10, but
         # only with PDF gridding "mandatory_factors=[5, 5, 5], max_prime=1000"
         PDF_map(grid_step_size, setting['grid_radius'], setting['use_second'],
