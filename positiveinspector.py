@@ -623,18 +623,17 @@ class PDFGrid(object):
 
     @property
     def summary(self) -> str:
-        t = '               |    for PDF>0 |    for PDF<0 |for whole PDF\n' \
-            '  PDF Integral |{intpp:13.5e} |{intpn:13.5e} |{intpa:13.5e}\n' \
-            '  PDF peak val |{valpp:13.5e} |{valpn:13.5e} |{valpa:13.5e}\n' \
-            '               |            x |            y |            z\n' \
-            ' PDF max pos.  |{posxp:13.5e} |{posyp:13.5e} |{poszp:13.5e}\n' \
-            ' PDF min pos.  |{posxn:13.5e} |{posyn:13.5e} |{poszn:13.5e}\n' \
-            ' PDF variance  |{varpx:13.5e} |{varpy:13.5e} |{varpz:13.5e}\n' \
-            ' PDF variance  |{varpx:13.5e} |{varpy:13.5e} |{varpz:13.5e}\n' \
-            ' PDF kurtosis  |{kurpx:13.5e} |{kurpy:13.5e} |{kurpz:13.5e}\n' \
-            ' map origin    |{ori_x:13.5e} |{ori_y:13.5e} |{ori_z:13.5e}\n' \
-            ' map limit min |{lim0x:13.5e} |{lim0y:13.5e} |{lim0z:13.5e}\n' \
-            ' map limit max |{lim1x:13.5e} |{lim1y:13.5e} |{lim1z:13.5e}'
+        t = ' PDF       |   pos values |   neg values |   all values\n' \
+            ' Integral  |{intpp:13.5e} |{intpn:13.5e} |{intpa:13.5e}\n' \
+            ' peak val  |{valpp:13.5e} |{valpn:13.5e} |{valpa:13.5e}\n' \
+            '           |            x |            y |            z\n' \
+            ' max pos.  |{posxp:13.5e} |{posyp:13.5e} |{poszp:13.5e}\n' \
+            ' min pos.  |{posxn:13.5e} |{posyn:13.5e} |{poszn:13.5e}\n' \
+            ' variance  |{varpx:13.5e} |{varpy:13.5e} |{varpz:13.5e}\n' \
+            ' kurtosis  |{kurpx:13.5e} |{kurpy:13.5e} |{kurpz:13.5e}\n' \
+            ' origin    |{ori_x:13.5e} |{ori_y:13.5e} |{ori_z:13.5e}\n' \
+            ' limit min |{lim0x:13.5e} |{lim0y:13.5e} |{lim0z:13.5e}\n' \
+            ' limit max |{lim1x:13.5e} |{lim1y:13.5e} |{lim1z:13.5e}'
         posp = self.positive_peak_position
         posn = self.negative_peak_position
         return t.format(
