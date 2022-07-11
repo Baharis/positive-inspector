@@ -47,7 +47,7 @@ MORE -1
 
 WGHT   0.00000
 FVAR   0.10000
-Fe1  1 {x:9.6f} {y:9.6f} {z:9.6f} 11.0 {U11:9.6f} {U22:9.6f} {U33:9.6f} {U12:9.6f} {U13:9.6f} {U23:9.6f}
+Fe1  1 {x:9.6f} {y:9.6f} {z:9.6f} 11.0 {U11:9.6f} {U22:9.6f} {U33:9.6f} {U23:9.6f} {U13:9.6f} {U12:9.6f}
 HKLF 4
 REM <olex2.extras>
 REM <anharmonics
