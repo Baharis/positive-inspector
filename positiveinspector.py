@@ -625,47 +625,51 @@ class PDFGrid(object):
 
     @property
     def summary(self) -> str:
-        t = ' PDF       |   pos values |   neg values |   all values\n' \
-            ' Integral  |{intpp:13.5e} |{intpn:13.5e} |{intpa:13.5e}\n' \
-            ' peak val  |{valpp:13.5e} |{valpn:13.5e} |{valpa:13.5e}\n' \
-            '           |            x |            y |            z\n' \
-            ' max pos.  |{posxp:13.5e} |{posyp:13.5e} |{poszp:13.5e}\n' \
-            ' min pos.  |{posxn:13.5e} |{posyn:13.5e} |{poszn:13.5e}\n' \
-            ' variance  |{varpx:13.5e} |{varpy:13.5e} |{varpz:13.5e}\n' \
-            ' kurtosis  |{kurpx:13.5e} |{kurpy:13.5e} |{kurpz:13.5e}\n' \
-            ' origin    |{ori_x:13.5e} |{ori_y:13.5e} |{ori_z:13.5e}\n' \
-            ' limit min |{lim0x:13.5e} |{lim0y:13.5e} |{lim0z:13.5e}\n' \
-            ' limit max |{lim1x:13.5e} |{lim1y:13.5e} |{lim1z:13.5e}'
+        t = 'PDF      |  pos values |  neg values |  all values\n' \
+            'Integral |{intp:12.4e} |{intn:12.4e} |{inta:12.4e}\n' \
+            'peak val |{valp:12.4e} |{valn:12.4e} |{vala:12.4e}\n' \
+            '         |           x |           y |           z\n' \
+            'max pos. |{maxx:12.4e} |{maxy:12.4e} |{maxz:12.4e}\n' \
+            'min pos. |{minx:12.4e} |{miny:12.4e} |{minz:12.4e}\n' \
+            'variance |{varx:12.4e} |{vary:12.4e} |{varz:12.4e}\n' \
+            'kurtosis |{kurx:12.4e} |{kury:12.4e} |{kurz:12.4e}\n' \
+            'origin   |{orix:12.4e} |{oriy:12.4e} |{oriz:12.4e}\n' \
+            'basis v1 |{bv1x:12.4e} |{bv1y:12.4e} |{bv1z:12.4e}\n' \
+            'basis v2 |{bv2x:12.4e} |{bv2y:12.4e} |{bv2z:12.4e}\n' \
+            'basis v3 |{bv3x:12.4e} |{bv3y:12.4e} |{bv3z:12.4e}\n'
         posp = self.positive_peak_position
         posn = self.negative_peak_position
         return t.format(
-            intpp=self.integrated_positive_probability,
-            intpn=self.integrated_negative_probability,
-            intpa=self.integrated_probability,
-            valpp=np.max(self.array),
-            valpn=np.max(-self.array),
-            valpa=np.max(np.abs(self.array)),
-            posxp=posp[0],
-            posyp=posp[1],
-            poszp=posp[2],
-            posxn=posn[0],
-            posyn=posn[1],
-            poszn=posn[2],
-            varpx=np.var(self.array.mean(axis=(1, 2))),
-            varpy=np.var(self.array.mean(axis=(2, 0))),
-            varpz=np.var(self.array.mean(axis=(0, 1))),
-            kurpx=kurtosis(array=self.array.mean(axis=(1, 2))),
-            kurpy=kurtosis(array=self.array.mean(axis=(2, 0))),
-            kurpz=kurtosis(array=self.array.mean(axis=(0, 1))),
-            ori_x=self.origin[0],
-            ori_y=self.origin[1],
-            ori_z=self.origin[2],
-            lim0x=np.amin(self.x),
-            lim1x=np.amax(self.x),
-            lim0y=np.amin(self.y),
-            lim1y=np.amax(self.y),
-            lim0z=np.amin(self.z),
-            lim1z=np.amax(self.z),
+            intp=self.integrated_positive_probability,
+            intn=self.integrated_negative_probability,
+            inta=self.integrated_probability,
+            valp=np.max(self.array),
+            valn=np.max(-self.array),
+            vala=np.max(np.abs(self.array)),
+            maxx=posp[0],
+            maxy=posp[1],
+            maxz=posp[2],
+            minx=posn[0],
+            miny=posn[1],
+            minz=posn[2],
+            varx=np.var(self.array.mean(axis=(1, 2))),
+            vary=np.var(self.array.mean(axis=(2, 0))),
+            varz=np.var(self.array.mean(axis=(0, 1))),
+            kurx=kurtosis(array=self.array.mean(axis=(1, 2))),
+            kury=kurtosis(array=self.array.mean(axis=(2, 0))),
+            kurz=kurtosis(array=self.array.mean(axis=(0, 1))),
+            orix=self.origin[0],
+            oriy=self.origin[1],
+            oriz=self.origin[2],
+            bv1x=self.basis[0, 0],
+            bv1y=self.basis[0, 1],
+            bv1z=self.basis[0, 2],
+            bv2x=self.basis[1, 0],
+            bv2y=self.basis[1, 1],
+            bv2z=self.basis[1, 2],
+            bv3x=self.basis[2, 0],
+            bv3y=self.basis[2, 1],
+            bv3z=self.basis[2, 2]
         )
 
 
