@@ -115,11 +115,10 @@ def b2a(value: Union[int, float, np.ndarray] = 1) -> Union[float, np.ndarray]:
     return value * 0.529177249
 
 
-def hstack_strings(*strings: str) -> str:
+def hstack_strings(*strings: str, sep: str = '   ') -> str:
     """Position two multiline strings next to each other"""
     widths = [max([len(l_) for l_ in string.split('\n')]) for string in strings]
-    heights = [len(string.split('\n')) for string in strings]
-    format_string = '     '.join(f'{{:{w}}}' for w in widths)
+    format_string = sep.join(f'{{:{w}}}' for w in widths)
     columns = [s.split('\n') for s in strings]
     zip_ = itertools.zip_longest(*columns, fillvalue='')
     rows = [format_string.format(*cells) for cells in zip_]
@@ -603,11 +602,6 @@ class PDFGrid(object):
         ind = np.unravel_index(np.argmin(self.array), self.array.shape)
         return self.indices2position(np.array(ind))
 
-    @property
-    def absolute_peak_position(self):
-        ind = np.unravel_index(np.argmax(np.abs(self.array)), self.array.shape)
-        return self.indices2position(np.array(ind))
-
     def trim_around(self,
                     center: np.ndarray,
                     radius: float,
@@ -629,21 +623,20 @@ class PDFGrid(object):
 
     @property
     def summary(self) -> str:
-        t = '               |       for p>0 |       for p<0 |     for all p\n' \
-            '  PDF Integral | {intpp:13.5e} | {intpn:13.5e} | {intpa:13.5e}\n' \
-            '  PDF peak val | {valpp:13.5e} | {valpn:13.5e} | {valpa:13.5e}\n' \
-            ' PDF peak xpos | {posxp:13.5e} | {posxn:13.5e} | {posxa:13.5e}\n' \
-            ' PDF peak ypos | {posyp:13.5e} | {posyn:13.5e} | {posya:13.5e}\n' \
-            ' PDF peak zpos | {poszp:13.5e} | {poszn:13.5e} | {posza:13.5e}\n' \
-            '               |             x |             y |             z\n' \
-            '  PDF variance | {varpx:13.5e} | {varpy:13.5e} | {varpz:13.5e}\n' \
-            '  PDF kurtosis | {kurpx:13.5e} | {kurpy:13.5e} | {kurpz:13.5e}\n' \
-            ' map origin    | {ori_x:13.5e} | {ori_y:13.5e} | {ori_z:13.5e}\n' \
-            ' map limit min | {lim0x:13.5e} | {lim0y:13.5e} | {lim0z:13.5e}\n' \
-            ' map limit max | {lim1x:13.5e} | {lim1y:13.5e} | {lim1z:13.5e}'
+        t = '               |    for PDF>0 |    for PDF<0 |for whole PDF\n' \
+            '  PDF Integral |{intpp:13.5e} |{intpn:13.5e} |{intpa:13.5e}\n' \
+            '  PDF peak val |{valpp:13.5e} |{valpn:13.5e} |{valpa:13.5e}\n' \
+            '               |            x |            y |            z\n' \
+            ' PDF max pos.  |{posxp:13.5e} |{posyp:13.5e} |{poszp:13.5e}\n' \
+            ' PDF min pos.  |{posxn:13.5e} |{posyn:13.5e} |{poszn:13.5e}\n' \
+            ' PDF variance  |{varpx:13.5e} |{varpy:13.5e} |{varpz:13.5e}\n' \
+            ' PDF variance  |{varpx:13.5e} |{varpy:13.5e} |{varpz:13.5e}\n' \
+            ' PDF kurtosis  |{kurpx:13.5e} |{kurpy:13.5e} |{kurpz:13.5e}\n' \
+            ' map origin    |{ori_x:13.5e} |{ori_y:13.5e} |{ori_z:13.5e}\n' \
+            ' map limit min |{lim0x:13.5e} |{lim0y:13.5e} |{lim0z:13.5e}\n' \
+            ' map limit max |{lim1x:13.5e} |{lim1y:13.5e} |{lim1z:13.5e}'
         posp = self.positive_peak_position
         posn = self.negative_peak_position
-        posa = self.absolute_peak_position
         return t.format(
             intpp=self.integrated_positive_probability,
             intpn=self.integrated_negative_probability,
@@ -657,9 +650,6 @@ class PDFGrid(object):
             posxn=posn[0],
             posyn=posn[1],
             poszn=posn[2],
-            posxa=posa[0],
-            posya=posa[1],
-            posza=posa[2],
             varpx=np.var(self.array.mean(axis=(1, 2))),
             varpy=np.var(self.array.mean(axis=(2, 0))),
             varpz=np.var(self.array.mean(axis=(0, 1))),
@@ -703,7 +693,7 @@ def _run_test_pdf_map(setting_list: SettingList) -> None:
         g1 = PDFGrid.generate_from_setting(setting=s, backend='xd')
         g2 = PDFGrid.generate_from_setting(setting=s, backend='olex2')
         passed[i] = g1.is_positive_definite is g2.is_positive_definite
-        print('XD summary:' + ' ' * 57 + 'olex2 summary:')
+        print('XD summary:' + ' ' * 54 + 'olex2 summary:')
         print(hstack_strings(g1.summary, g2.summary))
         print(f'Checked {i + 1:7d} / {len(passed)} map pairs: '
               f'{len([r for r in passed if r is True])} agree, '
