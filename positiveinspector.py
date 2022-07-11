@@ -441,7 +441,8 @@ class PDFGrid(object):
         x_vector = b2a(np.array(file_lines[3].split()[1:], dtype=np.float64))
         y_vector = b2a(np.array(file_lines[4].split()[1:], dtype=np.float64))
         z_vector = b2a(np.array(file_lines[5].split()[1:], dtype=np.float64))
-        array = cls._read_array_from_lines(file_lines[6 + atom_count:], steps, 'C')
+        array = cls._read_array_from_lines(file_lines[6 + atom_count:],
+                                           steps, 'C')
         return cls(array, origin, x_vector, y_vector, z_vector)
 
     @classmethod
@@ -687,17 +688,21 @@ def _parse_test_pdf_map_args(args) -> dict:
 
 
 def _run_test_pdf_map(setting_list: SettingList) -> None:
-    passed = [None, ] * len(setting_list)
+    passed = [False, ] * len(setting_list)
     print(f'Testing {len(passed)} individual maps against each other')
     for i, s in enumerate(setting_list):
-        g1 = PDFGrid.generate_from_setting(setting=s, backend='xd')
-        g2 = PDFGrid.generate_from_setting(setting=s, backend='olex2')
-        passed[i] = g1.is_positive_definite is g2.is_positive_definite
-        print('XD summary:' + ' ' * 54 + 'olex2 summary:')
-        print(hstack_strings(g1.summary, g2.summary))
-        print(f'Checked {i + 1:7d} / {len(passed)} map pairs: '
-              f'{len([r for r in passed if r is True])} agree, '
-              f'{len([r for r in passed if r is False])} disagree.')
+        g1 = PDFGrid.generate_from_setting(setting=s, backend='olex2')
+        g2 = PDFGrid.generate_from_setting(setting=s, backend='xd')
+        olex_summary = 'olex2 summary\n' + g1.summary
+        xd_summary = 'XD summary\n' + g2.summary
+        passed[i] = np.allclose(g1.array, g2.array, atol=TOL, rtol=1e-4)
+        try:
+            diff_summary = 'olex2-XD summary\n' + (g1-g2).summary
+        except PDFGrid.MismatchError as e:
+            diff_summary = e
+        print(hstack_strings(olex_summary, xd_summary, diff_summary))
+        print(f'Checked {i + 1:7d} / {len(passed):7d} map pairs: '
+              f'{sum(passed):7} agree, {i + 1 - sum(passed):7} disagree.')
 
 
 def test_pdf_map_where(*args) -> None:
