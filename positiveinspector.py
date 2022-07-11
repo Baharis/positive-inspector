@@ -692,8 +692,8 @@ def _parse_test_pdf_map_args(args) -> dict:
 
 
 def _run_test_pdf_map(setting_list: SettingList) -> None:
-    passed = [False, ] * len(setting_list)
-    print(f'Testing {len(passed)} individual maps against each other')
+    results = ['U', ] * len(setting_list)
+    print(f'Testing {len(results)} individual maps against each other')
     for i, s in enumerate(setting_list):
         g1 = PDFGrid.generate_from_setting(setting=s, backend='olex2')
         g2 = PDFGrid.generate_from_setting(setting=s, backend='xd')
@@ -701,13 +701,16 @@ def _run_test_pdf_map(setting_list: SettingList) -> None:
         xd_summary = 'XD summary\n' + g2.summary
         try:
             diff_summary = 'olex2-XD summary\n' + (g1-g2).summary
-            passed[i] = np.allclose(g1.array, g2.array, atol=TOL, rtol=1e-4)
         except PDFGrid.MismatchError as e:
             diff_summary = str(e)
+            result = 'Mismatch'
+        else:
+            result = str(np.allclose(g1.array, g2.array, atol=TOL, rtol=1e-4))
+        results[i] = result[0]
         print(hstack_strings(olex_summary, xd_summary, diff_summary))
-        print(f'Checked {i + 1:7d} / {len(passed):7d} map pairs: '
-              f'{sum(passed):7} agree, {i + 1 - sum(passed):7} disagree. '
-              f'(atol={TOL}, rtol={1e-4})')
+        print(f'Checked {i + 1:7d} / {len(results):7d} map pairs: '
+              f'{results.count("T"):7} agree, {results.count("F"):7} disagree, '
+              f'{results.count("M"):7} mismatched. (atol={TOL}, rtol={1e-4})')
 
 
 def test_pdf_map_where(*args) -> None:
