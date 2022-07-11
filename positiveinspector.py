@@ -504,19 +504,19 @@ class PDFGrid(object):
             array_shapes_match = self.array.shape == other.array.shape
             origins_match = np.allclose(self.origin, other.origin, atol=TOL)
             basis_match = np.allclose(self.basis, other.basis, atol=TOL)
-        except AttributeError:
+        except (AttributeError, ValueError):
             m = 'Both subtracted objects must be PDFGrids'
             raise NotImplementedError(m)
         else:
             if array_shapes_match and origins_match and basis_match:
                 return PDFGrid(self.array-other.array, self.origin, *self.basis)
             else:
-                m = 'Subtracted PDFGrids must share array size, origin,' \
-                    'and basis: self={self}, other={other}.'
+                m = f'Subtracted PDFGrids must share array size, origin,' \
+                    f'and basis:\nself={self},\nother={other}.'
                 raise self.MismatchError(m)
 
     def __str__(self):
-        return f'PDFGrid({self.array.shape}-sized array span @ {self.origin}' \
+        return f'PDFGrid({self.array.shape}-sized array span @ {self.origin} ' \
                f'using x={self.basis[0]}, y={self.basis[1]}, z={self.basis[2]}'
 
     def __repr__(self):
@@ -699,14 +699,15 @@ def _run_test_pdf_map(setting_list: SettingList) -> None:
         g2 = PDFGrid.generate_from_setting(setting=s, backend='xd')
         olex_summary = 'olex2 summary\n' + g1.summary
         xd_summary = 'XD summary\n' + g2.summary
-        passed[i] = np.allclose(g1.array, g2.array, atol=TOL, rtol=1e-4)
         try:
             diff_summary = 'olex2-XD summary\n' + (g1-g2).summary
+            passed[i] = np.allclose(g1.array, g2.array, atol=TOL, rtol=1e-4)
         except PDFGrid.MismatchError as e:
-            diff_summary = e
+            diff_summary = str(e)
         print(hstack_strings(olex_summary, xd_summary, diff_summary))
         print(f'Checked {i + 1:7d} / {len(passed):7d} map pairs: '
-              f'{sum(passed):7} agree, {i + 1 - sum(passed):7} disagree.')
+              f'{sum(passed):7} agree, {i + 1 - sum(passed):7} disagree. '
+              f'(atol={TOL}, rtol={1e-4})')
 
 
 def test_pdf_map_where(*args) -> None:
