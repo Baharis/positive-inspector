@@ -475,6 +475,9 @@ class PDFGrid(object):
         values = np.array(entries, dtype=np.float64)
         return values.reshape(shape, order=order)
 
+    class MismatchError(Exception):
+        """Raised when `PDFGrid`(s) dims don't match or are contradictory."""
+
     def __init__(self,
                  array: np.ndarray,
                  origin: np.ndarray = np.array([0.0, 0.0, 0.0]),
@@ -494,6 +497,29 @@ class PDFGrid(object):
         self.array = array
         self.origin = origin
         self.basis = np.vstack([x_vector, y_vector, z_vector])
+
+    def __sub__(self, other):
+        try:
+            array_shapes_match = self.array.shape == other.array.shape
+            origins_match = np.allclose(self.origin, other.origin, atol=1e-5)
+            basis_match = np.allclose(self.basis, other.basis, atol=1e-5)
+        except AttributeError:
+            m = 'Both subtracted objects must be PDFGrids'
+            raise NotImplementedError(m)
+        else:
+            if array_shapes_match and origins_match and basis_match:
+                return PDFGrid(self.array-other.array, self.origin, *self.basis)
+            else:
+                m = 'Subtracted PDFGrids must share array size, origin,' \
+                    'and basis: self={self}, other={other}.'
+                raise self.MismatchError(m)
+
+    def __str__(self):
+        return f'PDFGrid({self.array.shape}-sized array span @ {self.origin}' \
+               f'using x={self.basis[0]}, y={self.basis[1]}, z={self.basis[2]}'
+
+    def __repr__(self):
+        return f'PDFGrid({self.array!r}, {self.origin!r}, *{self.basis!r})'
 
     @property
     def array(self) -> np.ndarray:
@@ -583,9 +609,9 @@ class PDFGrid(object):
         return self.indices2position(np.array(ind))
 
     def trim_around(self,
-             center: np.ndarray,
-             radius: float,
-             tolerance: float = 1e-4):
+                    center: np.ndarray,
+                    radius: float,
+                    tolerance: float = 1e-4):
         """Trim to `radius` with maximum norm of `self.basis` around `center`"""
         x_0i, y_0i, z_0i = self.position2indices(center)
         x_ri = radius / np.linalg.norm(self.basis[0]) + tolerance
