@@ -22,6 +22,8 @@ except ImportError:  # Mock modules in development environment if not available
     PDF_map = Mock()
 
 TEMP_DIR = tempfile.TemporaryDirectory()
+TEMP_DIR = Mock()
+TEMP_DIR.name = str(pathlib.Path.home().joinpath('_', 'PI', 'olex2'))
 TOL = 1e-5  # tolerance of unit cell, basis, origin etc. determination
 
 OLEX2_TEMPLATE_HKL = """
