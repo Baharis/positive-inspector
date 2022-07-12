@@ -79,6 +79,7 @@ Fe(1)     3 2    0   1   0 4  1  1 0  0   0  {x:9.6f}  {y:9.6f}  {z:9.6f} 1.0000
   {D1111:6.4e} {D2222:6.4e} {D3333:6.4e} {D1112:6.4e} {D1222:6.4e}
   {D1113:6.4e} {D1333:6.4e} {D2223:6.4e} {D2333:6.4e} {D1122:6.4e}
   {D1133:6.4e} {D2233:6.4e} {D1123:6.4e} {D1223:6.4e} {D1233:6.4e}
+  6.00000 0.00000
  1  1.000000  1.000000  1.000000  1.000000  1.000000  1.000000
  0.0000E+00 0.0000E+00 0.0000E+00 0.0000E+00 0.0000E+00 0.0000E+00 0.0000E+00
  0.0000E+00
@@ -464,6 +465,7 @@ class PDFGrid(object):
         y_vector = y_dir * lengths[1] / (steps[1] - 1)
         z_vector = z_dir * lengths[2] / (steps[2] - 1)
         array = cls._read_array_from_lines(non_empty_lines[11:], steps, 'F')
+        array = np.flip(array, axis=2)  # .grd maps seem to be z-flipped? test U
         return cls(array, origin + o_vec, x_vector, y_vector, z_vector)
 
     @staticmethod
