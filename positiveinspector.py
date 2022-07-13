@@ -422,7 +422,7 @@ class PDFGrid(object):
     def _generate_from_setting_using_olex2(cls, setting: SettingCase):
         olex2_hkl_file_path = pathlib.Path(TEMP_DIR.name).joinpath('olex2.hkl')
         olex2_ins_file_path = pathlib.Path(TEMP_DIR.name).joinpath('olex2.ins')
-        olex2_cube_file_path = pathlib.Path(TEMP_DIR.name).joinpath('PDF.cube')
+        olex2_cube_file_path = pathlib.Path(TEMP_DIR.name).joinpath('olex2_PDF.cube')
         with open(olex2_hkl_file_path, 'w') as olex2_hkl_file:
             olex2_hkl_file.write(setting.olex2_hkl_file_contents)
         with open(olex2_ins_file_path, 'w') as olex2_ins_file:
@@ -432,7 +432,7 @@ class PDFGrid(object):
         # this step size makes olex2 create a 100-steps grid when a=b=c=10, but
         # only with PDF gridding "mandatory_factors=[5, 5, 5], max_prime=1000"
         PDF_map(grid_step_size, setting['grid_radius'], setting['use_second'],
-                setting['use_third'], setting['use_fourth'], True, True)
+                setting['use_third'], setting['use_fourth'], False, True, True)
         new = cls._read_from_cube_file(olex2_cube_file_path)
         new.array = new.array if setting['use_second'] else new.array / 1000.
         center = setting.atom_position
