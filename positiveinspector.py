@@ -288,7 +288,8 @@ class SettingCase(MostlyDefaultDict):
         d['star4'] = '*' if star4 else ' '
         return d
 
-    def base_vectors(self):
+    @property
+    def basis(self):
         a, b, c = self['a'], self['b'], self['c']
         sa, ca = np.sin(np.deg2rad(self['al'])), np.cos(np.deg2rad(self['al']))
         sb, cb = np.sin(np.deg2rad(self['be'])), np.cos(np.deg2rad(self['be']))
@@ -297,20 +298,20 @@ class SettingCase(MostlyDefaultDict):
         a_vector = np.array([a, 0, 0])
         b_vector = np.array([b * cg, b * sg, 0])
         c_vector = np.array([c * cb, c * (ca - cb * cg) / sg, v / (a * b * sg)])
-        return a_vector, b_vector, c_vector
+        return np.vstack([a_vector, b_vector, c_vector])
 
     @property
     def unit_cell_volume(self):
-        return np.linalg.det(np.vstack(self.base_vectors()))
+        return np.linalg.det(self.basis)
 
     @property
     def atom_position(self) -> np.ndarray:
-        av, bv, cv = self.base_vectors()
+        av, bv, cv = self.basis
         return self['x'] * av + self['y'] * bv + self['z'] * cv
 
     @property
     def origin_position(self) -> np.ndarray:
-        av, bv, cv, = self.base_vectors()
+        av, bv, cv, = self.basis
         a, b, c, r = self['a'], self['b'], self['c'], self['grid_radius']
         x, y, z = self['x'], self['y'], self['z']
         return (x - r / a) * av + (y - r / b) * bv + (z - r / c) * cv
