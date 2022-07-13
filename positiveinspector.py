@@ -734,16 +734,6 @@ def test_pdf_map_single_case() -> None:
     _run_test_pdf_map(setting_list=test_setting_list)
 
 
-def test_pdf_map_third_order() -> None:
-    test_setting_list = SettingList.wheregex(**{'C[123]{3}': [0.000005, 0.0]})
-    _run_test_pdf_map(setting_list=test_setting_list)
-
-
-def test_pdf_map_fourth_order() -> None:
-    test_setting_list = SettingList.wheregex(**{'D[123]{4}': [0.000005, 0.0]})
-    _run_test_pdf_map(setting_list=test_setting_list)
-
-
 def visualise_my_hamiltonian() -> None:
     import matplotlib
     import matplotlib.pyplot as plt
@@ -808,8 +798,6 @@ namespace = 'NoSpherA2'
 OV.registerFunction(test_pdf_map_where, False, namespace)
 OV.registerFunction(test_pdf_map_wheregex, False, namespace)
 OV.registerFunction(test_pdf_map_single_case, False, namespace)
-# OV.registerFunction(test_pdf_map_third_order, False, namespace)
-# OV.registerFunction(test_pdf_map_fourth_order, False, namespace)
 
 
 if __name__ == '__main__':
