@@ -56,7 +56,7 @@ U_map = [[0, 3, 4],
          [3, 1, 5],
          [4, 5, 2]]
 
-a2b = 0.52917749
+a2b = 0.529177210903
 def unique_permutations(v):
   f = np.math.factorial
   return f(len(v)) / np.prod([f(v.count(i)) for i in range(max(v) + 1)])
@@ -614,7 +614,7 @@ def plot_map_cube(map_type,resolution):
 
   print("start writing a %4d x %4d x %4d cube" % (size[0], size[1], size[2]))
 
-  with open("%s_%s.cube" % (name, map_name), 'w') as cube:
+  with open("%s_%s.cube" % (name, map_type), 'w') as cube:
     cube.write("Fourier synthesis map created by Olex2\n")
     cube.write("Model name: %s\n" % name)
     # Origin of cube
@@ -746,11 +746,16 @@ def plot_map(data, iso, dist=1.0, min_v=0, max_v=20):
   olex_xgrid.SetSurfaceScale(iso)
   olex_xgrid.SetVisible(True)
 
-def plot_fft_map_cube(fft_map, map_name):
+def plot_fft_map_cube(fft_map, map_name, size=[]):
   cctbx_adapter = OlexCctbxAdapter()
   xray_structure = cctbx_adapter.xray_structure()
-  uc = xray_structure.unit_cell()  
-  temp = fft_map.n_real()
+  uc = xray_structure.unit_cell()
+  try:
+    values = fft_map.real_map_unpadded()
+    temp = values.focus()
+  except:
+    values = fft_map
+    temp = size
   size = [int(temp[0]),int(temp[1]),int(temp[2])]
   name = OV.ModelSrc()
 
@@ -761,16 +766,15 @@ def plot_fft_map_cube(fft_map, map_name):
     cm[i] /= a2b
   cm = tuple(cm)  
   for a in range(n_atoms):
-      coord = olx.xf.au.GetAtomCrd(a)
-      pos = olx.xf.au.Orthogonalise(coord).split(',')
+      pos = olx.xf.au.Orthogonalise(olx.xf.au.GetAtomCrd(a)).split(',')
       positions[a] = [float(pos[0]) / a2b, float(pos[1]) / a2b, float(pos[2]) / a2b]
 
-  vecs = [(cm[0] / (size[0]), cm[1] / (size[0]), cm[2] / (size[0])),
-          (cm[3] / (size[1]), cm[4] / (size[1]), cm[5] / (size[1])),
-          (cm[6] / (size[2]), cm[7] / (size[2]), cm[8] / (size[2]))]
+  vecs = [(cm[0] / (size[0]), cm[1] / (size[1]), cm[2] / (size[2])),
+          (cm[3] / (size[0]), cm[4] / (size[1]), cm[5] / (size[2])),
+          (cm[6] / (size[0]), cm[7] / (size[1]), cm[8] / (size[2]))]
 
   print ("start writing a %4d x %4d x %4d cube"%(size[0],size[1],size[2]))
-  values = fft_map.real_map_unpadded()
+  
 
   with open("%s_%s.cube"%(name,map_name),'w') as cube:
     cube.write("Fourier synthesis map created by Olex2\n")
@@ -778,9 +782,9 @@ def plot_fft_map_cube(fft_map, map_name):
     # Origin of cube
     cube.write("%6d %12.8f %12.8f %12.8f\n"%(n_atoms,0.0,0.0,0.0))
     # need to write vectors!
-    cube.write("%6d %12.8f %12.8f %12.8f\n" % (size[0], vecs[0][0], vecs[0][1], vecs[0][2]))
-    cube.write("%6d %12.8f %12.8f %12.8f\n" % (size[1], vecs[1][0], vecs[1][1], vecs[1][2]))
-    cube.write("%6d %12.8f %12.8f %12.8f\n" % (size[2], vecs[2][0], vecs[2][1], vecs[2][2]))
+    cube.write("%6d %12.8f %12.8f %12.8f\n" % (size[0], vecs[0][0], vecs[1][0], vecs[2][0]))
+    cube.write("%6d %12.8f %12.8f %12.8f\n" % (size[1], vecs[0][1], vecs[1][1], vecs[2][1]))
+    cube.write("%6d %12.8f %12.8f %12.8f\n" % (size[2], vecs[0][2], vecs[1][2], vecs[2][2]))
     for i in range(n_atoms):
       atom_type = olx.xf.au.GetAtomType(i)
       charge = 200
@@ -795,7 +799,6 @@ def plot_fft_map_cube(fft_map, map_name):
       for y in range(size[1]):
         string = ""
         for z in range(size[2]):
-          # value = fft_map.real_map_unpadded()[(x*size[1]+y)*size[2]+z]
           string += ("%15.7e"%values[(x*size[1]+y)*size[2]+z])
           if (z+1) % 6 == 0 and (z+1) != size[2]:
             string += '\n'
@@ -1067,47 +1070,7 @@ def PDF_map(resolution=0.1, distance=1.0, second=True, third=True, fourth=True, 
       print("WARNING! At a distance of {:8.3f} Angs".format(min_dist))
     data.reshape(flex.grid(size[0], size[1], size[2]))
     if save_cube:
-      print("start writing a %4d x %4d x %4d cube" % (size[0], size[1], size[2]))
-      olx.xf.EndUpdate()
-      if OV.HasGUI():
-        olx.Refresh()
-      with open("PDF.cube", 'w') as cube:
-        cube.write("PDF map created by Olex2\n")
-        cube.write("Model name: %s\n" % name)
-        # Origin of cube
-        cube.write("%6d %12.8f %12.8f %12.8f\n" % (n_atoms, 0.0, 0.0, 0.0))
-        # need to write vectors!
-        cube.write("%6d %12.8f %12.8f %12.8f\n" % (size[0], vecs[0][0], vecs[0][1], vecs[0][2]))
-        cube.write("%6d %12.8f %12.8f %12.8f\n" % (size[1], vecs[1][0], vecs[1][1], vecs[1][2]))
-        cube.write("%6d %12.8f %12.8f %12.8f\n" % (size[2], vecs[2][0], vecs[2][1], vecs[2][2]))
-        for i in range(n_atoms):
-          atom_type=olx.xf.au.GetAtomType(i)
-          charge=200
-          for j in range(104):
-            if types[j] == atom_type:
-              charge=j
-              break
-          if charge == 200:
-            print("ATOM NOT FOUND!")
-          cube.write("%6d %6d.00000 %12.8f %12.8f %12.8f\n" % (charge, charge, posn[i][0], posn[i][1], posn[i][2]))
-        for x in range(size[0]):
-          for y in range(size[1]):
-            string = ""
-            for z in range(size[2]):
-              v = data[(x * size[1] + y) * size[2] + z]
-              if abs(v) > 1E-99:
-                string += ("%15.5e" % data[(x * size[1] + y) * size[2] + z])
-              else:
-                string += ("%15.5e" % 0)
-              if (z + 1) % 6 == 0 and (z + 1) != size[2]:
-                string += '\n'
-            if (y != (size[1] - 1)):
-              string += '\n'
-            cube.write(string)
-          if(x != (size[0] - 1)):
-            cube.write('\n')
-        cube.close()
-      print("Saved PDF map successfully")
+      plot_fft_map_cube(data, "PDF", size)
 
     if do_plot:
       print("Grid Size: %4d x %4d x %4d" % (size[0], size[1], size[2]))
