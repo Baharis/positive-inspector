@@ -414,10 +414,12 @@ class PDFGrid(object):
         process = subprocess.Popen("xdpdf", shell=True, cwd=TEMP_DIR.name,
                                    env=my_env, stdout=subprocess.DEVNULL)
         process.wait()
-        new = cls._read_from_grid_file(xd_grd_file_path)
-        new.array /= setting.unit_cell_volume
-        new.origin += setting.origin_position
-        return new
+        read = cls._read_from_grid_file(xd_grd_file_path)
+        new_array = read.array / setting.unit_cell_volume
+        new_origin = read.origin + setting.origin_position
+        new_basis = setting.basis / np.linalg.norm(setting.basis, axis=1) \
+                    * np.diag(read.basis)
+        return cls(new_array, new_origin, *new_basis)
 
     @classmethod
     def _generate_from_setting_using_olex2(cls, setting: SettingCase):
@@ -462,14 +464,14 @@ class PDFGrid(object):
                            and not cls.GRD_COMMENT_LINE_REGEX.match(line)]
         steps = np.array(non_empty_lines[2].split(), dtype=int)
         origin = np.array(non_empty_lines[3].split(), dtype=np.float64)
-        lengths = np.array(non_empty_lines[4].split(), dtype=np.float64)
+        edge_lengths = np.array(non_empty_lines[4].split(), dtype=np.float64)
         o_vec = np.array(non_empty_lines[6].split()[1:4], dtype=np.float64)
         x_dir = np.array(non_empty_lines[7].split()[1:4], dtype=np.float64)
         y_dir = np.array(non_empty_lines[8].split()[1:4], dtype=np.float64)
         z_dir = np.array(non_empty_lines[9].split()[1:4], dtype=np.float64)
-        x_vector = x_dir * lengths[0] / (steps[0] - 1)
-        y_vector = y_dir * lengths[1] / (steps[1] - 1)
-        z_vector = z_dir * lengths[2] / (steps[2] - 1)
+        x_vector = x_dir * edge_lengths[0] / (steps[0] - 1)
+        y_vector = y_dir * edge_lengths[1] / (steps[1] - 1)
+        z_vector = z_dir * edge_lengths[2] / (steps[2] - 1)
         array = cls._read_array_from_lines(non_empty_lines[11:], steps, 'F')
         array = np.flip(array, axis=2)  # .grd maps seem to be z-flipped? test U
         return cls(array, origin + o_vec, x_vector, y_vector, z_vector)
@@ -493,8 +495,8 @@ class PDFGrid(object):
                  array: np.ndarray,
                  origin: np.ndarray = np.array([0.0, 0.0, 0.0]),
                  x_vector: np.ndarray = np.array([1.0, 0.0, 0.0]),
-                 y_vector: np.ndarray = np.array([1.0, 0.0, 0.0]),
-                 z_vector: np.ndarray = np.array([1.0, 0.0, 0.0])):
+                 y_vector: np.ndarray = np.array([0.0, 1.0, 0.0]),
+                 z_vector: np.ndarray = np.array([0.0, 0.0, 1.0])):
         """
         :param array: 3-dimensional array with PDF values at lattice points
         :param origin: 3-element vector describing position of the 000 point
