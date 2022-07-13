@@ -98,7 +98,7 @@ LATT   A P
 BANK   CR
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 MODULE *XDPDF
-SELECT atom Fe(1) scale 1.0 orth *angstrom
+SELECT atom Fe(1) scale 1.0 orth angstrom
 CUMORD {star2}second {star3}third {star4}fourth
 GRID 3-points *cryst
 LIMITS xmin -{grid_radius:8.6f} xmax {grid_radius:8.6f} nx {grid_steps:d}
@@ -300,6 +300,10 @@ class SettingCase(MostlyDefaultDict):
         return a_vector, b_vector, c_vector
 
     @property
+    def unit_cell_volume(self):
+        return np.linalg.det(np.vstack(self.base_vectors()))
+
+    @property
     def atom_position(self) -> np.ndarray:
         av, bv, cv = self.base_vectors()
         return self['x'] * av + self['y'] * bv + self['z'] * cv
@@ -410,6 +414,7 @@ class PDFGrid(object):
                                    env=my_env, stdout=subprocess.DEVNULL)
         process.wait()
         new = cls._read_from_grid_file(xd_grd_file_path)
+        new.array /= setting.unit_cell_volume
         new.origin += setting.origin_position
         return new
 
