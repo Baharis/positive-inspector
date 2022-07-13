@@ -22,8 +22,8 @@ except ImportError:  # Mock modules in development environment if not available
     PDF_map = Mock()
 
 TEMP_DIR = tempfile.TemporaryDirectory()
-TEMP_DIR = Mock()
-TEMP_DIR.name = str(pathlib.Path.home().joinpath('_', 'PI', 'olex2'))
+# TEMP_DIR = Mock()
+# TEMP_DIR.name = str(pathlib.Path.home().joinpath('_', 'PI', 'olex2'))
 TOL = 1e-5  # tolerance of unit cell, basis, origin etc. determination
 
 OLEX2_TEMPLATE_HKL = """
@@ -802,7 +802,6 @@ def visualise_my_hamiltonian() -> None:
     colors = ['b' * (p > 0) + 'r' * (p <= 0) for p in pdf_list]
     ax.scatter(x_list, y_list, z_list, s=size_list, c=colors)
     plt.show()
-
 
 
 namespace = 'NoSpherA2'
