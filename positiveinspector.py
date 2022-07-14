@@ -507,12 +507,10 @@ class PDFGrid(object):
         """Returns True only when all non-zero arguments are within tolerance"""
         if len(args) < 2:
             return True
-        a0 = args[0].flatten()
-        a0_masked = np.ma.array(a0, mask=(a0 == 0))
-        for ai in args[1:]:
-            ai_masked = np.ma.array(ai.flatten(), mask=(ai.flatten() == 0))
-            if not np.ma.allclose(a0_masked, ai_masked, masked_equal=True,
-                                  rtol=cls.RTOL, atol=cls.ATOL):
+        a0 = np.ma.array(args[0], mask=(args[0] == 0))
+        for arg in args[1:]:
+            ai = np.ma.array(arg, mask=(arg == 0))
+            if not np.ma.allclose(a0, ai, rtol=cls.RTOL, atol=cls.ATOL):
                 return False
         return True
 
