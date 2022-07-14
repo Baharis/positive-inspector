@@ -22,9 +22,8 @@ except ImportError:  # Mock modules in development environment if not available
     PDF_map = Mock()
 
 TEMP_DIR = tempfile.TemporaryDirectory()
-TEMP_DIR = Mock()
-TEMP_DIR.name = str(pathlib.Path.home().joinpath('_', 'PI', 'olex2'))
-TOL = 1e-5  # tolerance of unit cell, basis, origin etc. determination
+# TEMP_DIR = Mock()
+# TEMP_DIR.name = str(pathlib.Path.home().joinpath('_', 'PI', 'olex2'))
 
 OLEX2_TEMPLATE_HKL = """
    1   0   0    1.00    1.00
@@ -389,8 +388,8 @@ class PDFGrid(object):
         XD = 'xd'
         olex2 = 'olex2'
 
-    ATOL = TOL
-    RTOL = .001
+    ATOL = 1e-5
+    RTOL = 1e-3
     GRD_COMMENT_LINE_REGEX = re.compile(r'^!.+$', re.MULTILINE)
 
     @classmethod
@@ -436,7 +435,7 @@ class PDFGrid(object):
         with open(olex2_ins_file_path, 'w') as olex2_ins_file:
             olex2_ins_file.write(setting.olex2_ins_file_contents)
         OV.Reap(str(olex2_ins_file_path))
-        grid_step_size = setting.step_size + TOL
+        grid_step_size = setting.step_size + cls.ATOL
         # this step size makes olex2 create a 100-steps grid when a=b=c=10, but
         # only with PDF gridding "mandatory_factors=[5, 5, 5], max_prime=1000"
         PDF_map(grid_step_size, setting['grid_radius'], setting['use_second'],
