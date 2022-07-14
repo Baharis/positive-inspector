@@ -553,7 +553,9 @@ class PDFGrid(object):
 
     def __sub__(self, other):
         if self.all_match(self, other):
-            return PDFGrid(self.array-other.array, self.origin, *self.basis)
+            masked = np.ma.array(data=self.array - other.array,
+                                 mask=(self.array == 0) | (other.array == 0))
+            return PDFGrid(np.ma.filled(masked, 0.0), self.origin, *self.basis)
         else:
             m = f'Subtracted PDFGrids must share array size, origin,' \
                 f'and basis:\nself={self},\nother={other}.'
