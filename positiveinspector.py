@@ -507,11 +507,14 @@ class PDFGrid(object):
         """Returns True only when all non-zero arguments are within tolerance"""
         if len(args) < 2:
             return True
-        a0_mask = (args[0] == 0)
-        print('ZERO VALUES: ', sum(a0_mask | (args[1] == 0)))
-        print('MAX DIFF: ', repr(np.amin(args[0] - args[1], axis=0)).replace('\n', ' '))
-        return any(np.ma.allclose(args[0], a, a0_mask | (a == 0), cls.RTOL,
-                                  cls.ATOL) for a in args[1:])
+        a0 = args[0].flatten()
+        a0_masked = np.ma.array(a0, mask=(a0 == 0))
+        for ai in args[1:]:
+            ai_masked = np.ma.array(ai.flatten(), mask=(ai.flatten() == 0))
+            if not np.ma.allclose(a0_masked, ai_masked, masked_equal=True,
+                                  rtol=cls.RTOL, atol=cls.ATOL):
+                return False
+        return True
 
     @staticmethod
     def all_equal(*args):
