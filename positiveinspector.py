@@ -22,8 +22,8 @@ except ImportError:  # Mock modules in development environment if not available
     PDF_map = Mock()
 
 TEMP_DIR = tempfile.TemporaryDirectory()
-# TEMP_DIR = Mock()
-# TEMP_DIR.name = str(pathlib.Path.home().joinpath('_', 'PI', 'olex2'))
+TEMP_DIR = Mock()
+TEMP_DIR.name = str(pathlib.Path.home().joinpath('_', 'PI', 'olex2'))
 TOL = 1e-5  # tolerance of unit cell, basis, origin etc. determination
 
 OLEX2_TEMPLATE_HKL = """
@@ -722,7 +722,7 @@ def _run_test_pdf_map(setting_list: SettingList) -> None:
         print(hstack_strings(olex_summary, xd_summary, diff_summary))
         print(f'Checked {i + 1:7d} / {len(results):7d} map pairs: '
               f'{results.count("T"):7} agree, {results.count("F"):7} disagree, '
-              f'{results.count("M"):7} mismatched. (atol={TOL}, rtol={1e-4})')
+              f'{results.count("M"):7} mismatched. (atol={TOL}, rtol={1e-3})')
 
 
 def test_pdf_map_where(*args) -> None:
