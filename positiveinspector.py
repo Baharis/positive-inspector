@@ -389,6 +389,8 @@ class PDFGrid(object):
         XD = 'xd'
         olex2 = 'olex2'
 
+    ATOL = TOL
+    RTOL = .001
     GRD_COMMENT_LINE_REGEX = re.compile(r'^!.+$', re.MULTILINE)
 
     @classmethod
@@ -746,12 +748,13 @@ def _run_test_pdf_map(setting_list: SettingList) -> None:
             diff_summary = str(e)
             result = 'Mismatch'
         else:
-            result = str(np.allclose(g1.array, g2.array, atol=TOL, rtol=1e-3))
+            result = str(PDFGrid.all_close2(g1.array, g2.array))
         results[i] = result[0]
         print(hstack_strings(olex_summary, xd_summary, diff_summary))
         print(f'Checked {i + 1:7d} / {len(results):7d} map pairs: '
               f'{results.count("T"):7} agree, {results.count("F"):7} disagree, '
-              f'{results.count("M"):7} mismatched. (atol={TOL}, rtol={1e-3})')
+              f'{results.count("M"):7} mismatched. '
+              f'(rtol={PDFGrid.RTOL}, atol={PDFGrid.ATOL})')
 
 
 def test_pdf_map_where(*args) -> None:
