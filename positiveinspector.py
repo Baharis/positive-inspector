@@ -717,7 +717,7 @@ def _run_test_pdf_map(setting_list: SettingList) -> None:
             diff_summary = str(e)
             result = 'Mismatch'
         else:
-            result = str(np.allclose(g1.array, g2.array, atol=TOL, rtol=1e-4))
+            result = str(np.allclose(g1.array, g2.array, atol=TOL, rtol=1e-3))
         results[i] = result[0]
         print(hstack_strings(olex_summary, xd_summary, diff_summary))
         print(f'Checked {i + 1:7d} / {len(results):7d} map pairs: '
