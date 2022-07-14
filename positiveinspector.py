@@ -23,7 +23,7 @@ except ImportError:  # Mock modules in development environment if not available
 
 TEMP_DIR = tempfile.TemporaryDirectory()
 # TEMP_DIR = Mock()
-# TEMP_DIR.name = str(pathlib.Path.home().joinpath('_', 'PI', 'olex2'))
+# TEMP_DIR.name = str(pathlib.Path.home().joinpath('_', 'PI', 'olex3'))
 
 OLEX2_TEMPLATE_HKL = """
    1   0   0    1.00    1.00
@@ -688,8 +688,8 @@ class PDFGrid(object):
             intp=self.integrated_positive_probability,
             intn=self.integrated_negative_probability,
             inta=self.integrated_probability,
-            valp=np.max(self.array),
-            valn=np.max(-self.array),
+            valp=max(np.max(self.array), 0),
+            valn=min(np.min(self.array), 0),
             vala=np.max(np.abs(self.array)),
             maxx=posp[0],
             maxy=posp[1],
