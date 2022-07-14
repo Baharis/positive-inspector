@@ -494,6 +494,40 @@ class PDFGrid(object):
     class MismatchError(Exception):
         """Raised when `PDFGrid`(s) dims don't match or are contradictory."""
 
+    @classmethod
+    def all_close(cls, *args):
+        """Returns True only when all arguments are within tolerance"""
+        return len(args) < 2 or all(np.isclose(args[0], a, rtol=cls.RTOL,
+                                               atol=cls.ATOL) for a in args[1:])
+
+    @classmethod
+    def all_close2(cls, *args: np.ndarray):
+        """Returns True only when all non-zero arguments are within tolerance"""
+        if len(args) < 2:
+            return True
+        a0_mask = (args[0] == 0)
+        print('ZERO VALUES: ', sum(a0_mask | (args[1] == 0)))
+        print('MAX DIFF: ', repr(np.amin(args[0] - args[1], axis=0)).replace('\n', ' '))
+        return any(np.ma.allclose(args[0], a, a0_mask | (a == 0), cls.RTOL,
+                                  cls.ATOL) for a in args[1:])
+
+    @staticmethod
+    def all_equal(*args):
+        """Returns True only when all arguments are equal"""
+        return not args or [args[0]] * len(args) == list(args)
+
+    @classmethod
+    def all_match(cls, *pdf_maps):
+        try:
+            shapes_match = cls.all_equal(p.array.shape for p in pdf_maps)
+            origins_match = cls.all_close(p.origin for p in pdf_maps)
+            basis_match = cls.all_close(p.basis for p in pdf_maps)
+        except (AttributeError, ValueError):
+            m = 'All compared objects must be PDFGrids'
+            raise NotImplementedError(m)
+        else:
+            return shapes_match and origins_match and basis_match
+
     def __init__(self,
                  array: np.ndarray,
                  origin: np.ndarray = np.array([0.0, 0.0, 0.0]),
@@ -515,20 +549,12 @@ class PDFGrid(object):
         self.basis = np.vstack([x_vector, y_vector, z_vector])
 
     def __sub__(self, other):
-        try:
-            array_shapes_match = self.array.shape == other.array.shape
-            origins_match = np.allclose(self.origin, other.origin, atol=TOL)
-            basis_match = np.allclose(self.basis, other.basis, atol=TOL)
-        except (AttributeError, ValueError):
-            m = 'Both subtracted objects must be PDFGrids'
-            raise NotImplementedError(m)
+        if self.all_match(self, other):
+            return PDFGrid(self.array-other.array, self.origin, *self.basis)
         else:
-            if array_shapes_match and origins_match and basis_match:
-                return PDFGrid(self.array-other.array, self.origin, *self.basis)
-            else:
-                m = f'Subtracted PDFGrids must share array size, origin,' \
-                    f'and basis:\nself={self},\nother={other}.'
-                raise self.MismatchError(m)
+            m = f'Subtracted PDFGrids must share array size, origin,' \
+                f'and basis:\nself={self},\nother={other}.'
+            raise self.MismatchError(m)
 
     def __str__(self):
         return f'PDFGrid({self.array.shape}-sized array span @ {self.origin} ' \
