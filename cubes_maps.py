@@ -722,7 +722,7 @@ def plot_fft_map(fft_map):
   data = None
   olex_xgrid.SetMinMax(min_v, max_v)
   olex_xgrid.SetVisible(True)
-  olex_xgrid.InitSurface(True, 2.0)
+  olex_xgrid.InitSurface(True, -100)
   iso = float(-sigma*3.3)
   olex_xgrid.SetSurfaceScale(iso)
   print("Map max val %.3f min val %.3f RMS: %.3f"%(max_v,min_v,sigma))
@@ -978,9 +978,9 @@ def PDF_map(resolution=0.1, distance=1.0, second=True, third=True, fourth=True, 
     if OV.HasGUI():
       olx.Refresh()
 
-    limits = [[cm[0], 0],
-              [cm[4], 0],
-              [cm[8], 0]]
+    limits = [[size[0], 0],
+              [size[1], 0],
+              [size[2], 0]]
 
 # determine piece of grid that really needs evaluation
     dist_bohr = distance / a2b
@@ -988,29 +988,26 @@ def PDF_map(resolution=0.1, distance=1.0, second=True, third=True, fourth=True, 
       if second == False or only_anh == True:
         if anharms[a] == None:
           continue
-      cart_minmax = [posn[a][0] - dist_bohr,
-                posn[a][1] - dist_bohr,
-                posn[a][2] - dist_bohr,
-                posn[a][0] + dist_bohr,
-                posn[a][1] + dist_bohr,
-                posn[a][2] + dist_bohr]
-      minmax = [0 for x in range(6)]
+      cart_minmax = [posn[a][0] - dist_bohr, posn[a][1] - dist_bohr, posn[a][2] - dist_bohr,
+                     posn[a][0] + dist_bohr, posn[a][1] + dist_bohr, posn[a][2] + dist_bohr,
+                     posn[a][0] - dist_bohr, posn[a][1] + dist_bohr, posn[a][2] + dist_bohr,
+                     posn[a][0] - dist_bohr, posn[a][1] - dist_bohr, posn[a][2] + dist_bohr,
+                     posn[a][0] + dist_bohr, posn[a][1] - dist_bohr, posn[a][2] - dist_bohr,
+                     posn[a][0] + dist_bohr, posn[a][1] + dist_bohr, posn[a][2] - dist_bohr,
+                     posn[a][0] - dist_bohr, posn[a][1] + dist_bohr, posn[a][2] - dist_bohr,
+                     posn[a][0] + dist_bohr, posn[a][1] - dist_bohr, posn[a][2] + dist_bohr,
+                     ]
+      minmax = [0 for x in range(24)]
       for i in range(3):
         for j in range(3):
-          for k in range(2):
-            minmax[i+k*3] += cart_minmax[j+k*3] * fm[i*3+j] * size[i] * a2b      
-      if minmax[0] < limits[0][0]:
-        limits[0][0] = minmax[0]
-      if minmax[1] < limits[1][0]:
-        limits[1][0] = minmax[1]
-      if minmax[2] < limits[2][0]:
-        limits[2][0] = minmax[2]
-      if minmax[3] > limits[0][1]:
-        limits[0][1] = minmax[3]
-      if minmax[4] > limits[1][1]:
-        limits[1][1] = minmax[4]
-      if minmax[5] > limits[2][1]:
-        limits[2][1] = minmax[5]
+          for k in range(8):
+            minmax[i+k*3] += cart_minmax[j+k*3] * fm[i*3+j] * size[i] * a2b
+      for c in range(8):
+        for i in range(3):
+          if minmax[i+c*3] < limits[i][0]:
+            limits[i][0] = minmax[i+c*3]
+          if minmax[i+c*3] > limits[i][1]:
+            limits[i][1] = minmax[i+c*3]
     for i in range(3):
       limits[i][0] = math.floor(limits[i][0])
       limits[i][1] = math.ceil(limits[i][1])
