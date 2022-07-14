@@ -96,7 +96,8 @@ def z_slice(z, x, y, vecs, posn, sigmas, pre, n_atoms, anharms, s, t, f, only_an
   for a in range(n_atoms):
     if only_anh == True and anharms[a] == None:
       continue
-    if pre[a] < 0:
+    #Skips NPD atoms
+    if pre[a] < 0: 
       continue
     diff = [(pos[0] - posn[a][0]) * a2b, (pos[1] - posn[a][1]) * a2b, (pos[2] - posn[a][2]) * a2b]
     mhalfuTUu = np.fmin(-0.5 * (diff[0] * (diff[0] * sigmas[a][0] \
@@ -438,10 +439,6 @@ def plot_cube(name,color_cube):
             value[x][y][z] = data2[x][y][z]
     else:
       print("Interpolating...")
-      #from dask import delayed
-      #from multiprocessing import Pool
-      #nproc = int(OV.GetParam("snum.NoSpherA2.ncpus"))
-      #pool = Pool(processes=nproc)
       for x in range(x_size):
         for y in range(y_size):
           for z in range(z_size):
@@ -725,10 +722,9 @@ def plot_fft_map(fft_map):
   data = None
   olex_xgrid.SetMinMax(min_v, max_v)
   olex_xgrid.SetVisible(True)
-  olex_xgrid.InitSurface(False, 2.0)
+  olex_xgrid.InitSurface(True, 2.0)
   iso = float(-sigma*3.3)
   olex_xgrid.SetSurfaceScale(iso)
-  #OV.SetParam('snum.xgrid.scale',"{:.3f}".format(iso))
   print("Map max val %.3f min val %.3f RMS: %.3f"%(max_v,min_v,sigma))
   print("Map size: %d x %d x %d"%(fft_map.n_real()[0],fft_map.n_real()[1],fft_map.n_real()[2]))
 
@@ -897,7 +893,6 @@ OV.registerFunction(residual_map, False, "NoSpherA2")
 def det(U):
   return U[0] * U[1] * U[2] + U[3] * U[4] * U[5] * 2 - U[1] * U[4] * U[4] - U[3] * U[2] * U[3] - U[5] * U[0] * U[5]
 def U_to_sigma(U):
-  # wich turns out to be a matrix inversion...
   U_loc = linalg.inv(np.array([U[0],U[3],U[4],U[3],U[1],U[5],U[4],U[5],U[2]]).reshape(3,3))
   return [U_loc[0][0],U_loc[1][1],U_loc[2][2],U_loc[0][1],U_loc[0][2],U_loc[1][2]]
 
@@ -956,6 +951,7 @@ def PDF_map(resolution=0.1, distance=1.0, second=True, third=True, fourth=True, 
       sigmas.append(U_to_sigma(adp_cart))
       pre_temp = det(sigmas[-1])
       if pre_temp < 0:
+        print("Skipping NPD Atom %s"%atom.label)
         pre_temp = -math.sqrt(-pre_temp) / fixed
       else:
         pre_temp = math.sqrt(pre_temp) / fixed
@@ -1083,7 +1079,7 @@ def PDF_map(resolution=0.1, distance=1.0, second=True, third=True, fourth=True, 
     raise(e)
 
   OV.DeleteBitmap("working")
-  print("WARNING: PDF Maps are at the moment just to be understood \nindicative and not benchmarked for numerical correctness!")
+  print("PDF Maps as implemented and tested by Florian Kleemiss and Daniel Tchon!")
 OV.registerFunction(PDF_map, False, "NoSpherA2")
 
 def tomc_map(resolution=0.1, return_map=False, use_f000=False):
