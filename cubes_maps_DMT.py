@@ -49,9 +49,9 @@ class HermitePolynomial:
   def __init__(self, coefficients: Sequence[int]):
     self.coefficients = coefficients
     self.order = len(coefficients)
-    if self.order is 3:
+    if self.order == 3:
       self._call = self._call_for_order_3
-    elif self.order is 4:
+    elif self.order == 4:
       self._call = self._call_for_order_4
     else:
       raise NotImplementedError(f'Order {self.order} is not implemented')
@@ -1005,7 +1005,6 @@ def PDF_map(resolution=0.1, distance=1.0, second=True, third=True, fourth=True, 
 
     gridding = cctbx_adapter.xray_structure().gridding(step=float(resolution))
     size = list(gridding.n_real())
-    data = flex.double(size[0] * size[1] * size[2])
 
     n_atoms = len(posn)
     cm = list(uc.orthogonalization_matrix())
@@ -1070,10 +1069,10 @@ def PDF_map(resolution=0.1, distance=1.0, second=True, third=True, fourth=True, 
     res = z_slice(zi, xi, yi, vecs, posn, sigmas, pre, n_atoms, anharms,
                   bool(second), bool(third), bool(fourth))
 
-    # data += flex.double(res)
-    for x, y, z, val in zip(xi, yi, zi, res):
-      start = ((x % size[0]) * size[1] + (y % size[1])) * size[2]
-      data[start + (z % size[2])] += val
+    res_matrix = res.reshape((xi_max - xi_min, yi_max - yi_min, zi_max - zi_min))
+    data_matrix = np.zeros(shape=size)
+    data_matrix[xi_min:xi_max, yi_min:yi_max, zi_min:zi_max] = res_matrix
+    data = flex.double(data_matrix.flatten())
 
     if second is False:
       print("Multiplying grid values with 1000 to get on visible scale")
