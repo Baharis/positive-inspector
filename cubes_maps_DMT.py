@@ -5,7 +5,7 @@ import olex_core
 import math
 import numpy as np
 from scipy import linalg
-from typing import List, Sequence
+from typing import List, Sequence, Union
 
 from olexFunctions import OV
 from cctbx_olex_adapter import OlexCctbxAdapter
@@ -32,6 +32,17 @@ Fr Ra Ac Th Pa U  Np Pu Am Cm Bk Cf Es Fm Md No Lr""".split()
 U_map = [[0, 3, 4],
          [3, 1, 5],
          [4, 5, 2]]
+
+
+def a2b(value: Union[int, float, np.ndarray] = 1) -> Union[float, np.ndarray]:
+  """Convert `value` in Angstrom to Bohr"""
+  return value * 1.8897259886
+
+
+def b2a(value: Union[int, float, np.ndarray] = 1) -> Union[float, np.ndarray]:
+  """Convert `value` in Bohr to Angstrom"""
+  return value * 0.529177249
+
 
 a2b = 0.529177210903
 
@@ -935,8 +946,7 @@ def PDF_map(resolution=0.1, distance=1.0, second=True, third=True, fourth=True, 
     posn = []
     anharms = []
     for atom in cctbx_adapter.xray_structure()._scatterers:
-      temp = list(atom.site)
-      coord = list(uc.orthogonalize(temp))
+      coord = np.array(uc.orthogonalize(atom.site))
       coord[0] /= a2b
       coord[1] /= a2b
       coord[2] /= a2b
