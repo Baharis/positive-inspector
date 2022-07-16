@@ -55,7 +55,7 @@ class HermitePolynomial:
                                [1, 1, 2, 2], [1, 2, 2, 2], [2, 2, 2, 2]]
 
   def __init__(self, coefficients: Sequence[int]):
-    self.coefficients = coefficients
+    self.c = coefficients
     self.order = len(coefficients)
     if self.order == 3:
       self._call = self._call_for_order_3
@@ -66,6 +66,9 @@ class HermitePolynomial:
 
   def __call__(self, u: np.ndarray, si_inv: np.ndarray) -> np.ndarray:
     return self._call(u, si_inv)
+
+  def __str__(self):
+    return 'H' + ''.join([str(c + 1) for c in self.c])
 
   def _call(self, u: np.ndarray, si_inv: np.ndarray) -> np.ndarray:
     """This method is abstract, to be overwritten by `self._call_for_order_*`"""
@@ -91,15 +94,10 @@ class HermitePolynomial:
     return r * self.unique_permutations
 
   @property
-  def c(self) -> Sequence[int]:
-    """Return coefficients in programming notation, eg. C112 -> [0, 0, 1]"""
-    return [c - 1 for c in self.coefficients]
-
-  @property
   def unique_permutations(self):
     f = np.math.factorial
-    v = self.coefficients
-    return f(len(v)) / np.prod([f(v.count(i)) for i in range(max(v) + 1)])
+    v = self.c
+    return f(self.order) / np.prod([f(v.count(i)) for i in range(self.order)])
 
   def w(self, u: np.ndarray, si_inv: np.ndarray) -> List[np.ndarray]:
     return [sum(si_inv[c, i] * u[:, i] for i in range(3)) for c in self.c]
