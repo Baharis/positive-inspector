@@ -120,7 +120,7 @@ except:
 
 
 def calculate_cubes():
-  if NoSpherA2.is_disordered == True:
+  if NoSpherA2.is_disordered is True:
     print("Disordered structures not implemented!")
     return
 
@@ -194,27 +194,27 @@ def get_map_types():
   name = OV.ModelSrc()
   folder = OV.FilePath()
   list_ = ";Residual<-diff;Deformation<-fcfmc;2Fo-Fc<-tomc;Fobs<-fobs;Fcalc<-fcalc;"
-  if os.path.isfile(os.path.join(folder,name+"_eli.cube")):
+  if os.path.isfile(os.path.join(folder, name+"_eli.cube")):
     list_ += "ELI-D;"
-  if os.path.isfile(os.path.join(folder,name+"_lap.cube")):
+  if os.path.isfile(os.path.join(folder, name+"_lap.cube")):
     list_ += "Laplacian;"
-  if os.path.isfile(os.path.join(folder,name+"_elf.cube")):
+  if os.path.isfile(os.path.join(folder, name+"_elf.cube")):
     list_ += "ELF;"
-  if os.path.isfile(os.path.join(folder,name+"_esp.cube")):
+  if os.path.isfile(os.path.join(folder, name+"_esp.cube")):
     list_ += "ESP;"
-  if os.path.isfile(os.path.join(folder,name+"_rdg.cube")):
+  if os.path.isfile(os.path.join(folder, name+"_rdg.cube")):
     list_ += "RDG;"
-  if os.path.isfile(os.path.join(folder,name+"_def.cube")):
+  if os.path.isfile(os.path.join(folder, name+"_def.cube")):
     list_ += "Stat. Def.;"
-  if os.path.isfile(os.path.join(folder,name+"_rdg.cube")) and os.path.isfile(os.path.join(folder,name+"_signed_rho.cube")):
+  if os.path.isfile(os.path.join(folder, name+"_rdg.cube")) and os.path.isfile(os.path.join(folder, name+"_signed_rho.cube")):
     list_ += "NCI;"
-  if os.path.isfile(os.path.join(folder,name+"_rho.cube")) and os.path.isfile(os.path.join(folder,name+"_esp.cube")):
+  if os.path.isfile(os.path.join(folder, name+"_rho.cube")) and os.path.isfile(os.path.join(folder, name+"_esp.cube")):
     list_ += "Rho + ESP;"
   nmo = Wfn_Job.get_nmo()
   if nmo != -1:
     exists = False
     for i in range(int(nmo)+1):
-      if os.path.isfile(os.path.join(folder,name+"_MO_"+str(i)+".cube")):
+      if os.path.isfile(os.path.join(folder, name+"_MO_"+str(i)+".cube")):
         exists = True
     if exists:
       list_ += "MO;"
@@ -222,7 +222,7 @@ def get_map_types():
   if ncen != -1:
     exists = False
     for i in range(int(ncen)+1):
-      if os.path.isfile(os.path.join(folder,name+"_HDEF_"+str(i)+".cube")):
+      if os.path.isfile(os.path.join(folder, name+"_HDEF_"+str(i)+".cube")):
         exists = True
     if exists:
       list_ += "HDEF;"
@@ -251,22 +251,22 @@ def change_map():
     plot_cube(name+"_def.cube", None)
   elif Type == "NCI":
     OV.SetParam('snum.NoSpherA2.map_scale_name',"RGB")
-    plot_cube(name+"_rdg.cube",name+"_signed_rho.cube")
+    plot_cube(name+"_rdg.cube", name+"_signed_rho.cube")
   elif Type == "RDG":
     plot_cube(name+"_rdg.cube", None)
   elif Type == "Rho + ESP":
     OV.SetParam('snum.NoSpherA2.map_scale_name',"BWR")
-    plot_cube(name+"_rho.cube",name+"_esp.cube")
+    plot_cube(name+"_rho.cube", name+"_esp.cube")
   elif Type == "fcfmc" or Type == "diff" or Type == "tomc" or Type == "fobs" or Type == "fcalc":
     OV.SetVar('map_slider_scale',-50)
-    OV.SetParam('snum.map.type',Type)
-    show_fft_map(float(OV.GetParam('snum.NoSpherA2.map_resolution')),map_type=Type)
+    OV.SetParam('snum.map.type', Type)
+    show_fft_map(float(OV.GetParam('snum.NoSpherA2.map_resolution')), map_type=Type)
     minimal = float(olx.xgrid.GetMin())
     maximal = float(olx.xgrid.GetMax())
     if -minimal > maximal:
       maximal = -minimal
-    OV.SetVar('map_min',0)
-    OV.SetVar('map_max',maximal*50)
+    OV.SetVar('map_min', 0)
+    OV.SetVar('map_max', maximal*50)
     olex.m("html.Update()")
   elif Type == "MO":
     number = int(OV.GetParam('snum.NoSpherA2.Property_MO_number')) -1
@@ -279,7 +279,7 @@ def change_map():
     return
 
 
-OV.registerFunction(change_map,True,'NoSpherA2')
+OV.registerFunction(change_map, True,'NoSpherA2')
 
 
 def change_pointsize():
@@ -402,7 +402,7 @@ def plot_cube(name, color_cube):
     run = None
     olex_xgrid.Init(x_size, y_size, z_size, True)
 
-    def interpolate(x,y,z):
+    def interpolate(x, y, z):
       # trilinear interpolation between the points... sorry for the mess
       x_1 = x/x_size
       y_1 = y/y_size
@@ -440,14 +440,14 @@ def plot_cube(name, color_cube):
       for x in range(x_size):
         for y in range(y_size):
           for z in range(z_size):
-            res = interpolate(x,y,z)
+            res = interpolate(x, y, z)
             value[x][y][z] = res
     data2 = None
     for x in range(x_size):
       for y in range(y_size):
         for z in range(z_size):
           colour = int(get_color(value[x][y][z]))
-          olex_xgrid.SetValue(x,y,z,data[x][y][z],colour)
+          olex_xgrid.SetValue(x, y, z, data[x][y][z], colour)
   else:
     gridding = data.accessor()
     isint = isinstance(data, flex.int)
@@ -506,7 +506,7 @@ def plot_cube(name, color_cube):
   OV.SetParam('snum.xgrid.scale', "{:.3f}".format(iso))
 
 
-OV.registerFunction(plot_cube,True,'NoSpherA2')
+OV.registerFunction(plot_cube, True, 'NoSpherA2')
 
 
 def plot_cube_single(name):
@@ -566,18 +566,18 @@ def plot_cube_single(name):
 
   cube = None
 
-  olex_xgrid.Init(x_size,y_size,z_size)
+  olex_xgrid.Init(x_size, y_size, z_size)
   for x in range(x_size):
     for y in range(y_size):
       for z in range(z_size):
-        olex_xgrid.SetValue(x,y,z,data[x][y][z])
+        olex_xgrid.SetValue(x, y, z, data[x][y][z])
   data = None
   OV.SetVar('map_min', 0)
   OV.SetVar('map_max', 40)
   OV.SetVar('map_slider_scale', 100)
   olex_xgrid.SetMinMax(min_, max_)
   olex_xgrid.SetVisible(True)
-  olex_xgrid.InitSurface(True,1)
+  olex_xgrid.InitSurface(True, 1)
   iso = float((abs(min_)+abs(max_))*2/3)
   olex_xgrid.SetSurfaceScale(iso)
   OV.SetParam('snum.xgrid.scale', "{:.3f}".format(iso))
@@ -593,7 +593,7 @@ def plot_map_cube(map_type, resolution):
   xray_structure = cctbx_adapter.xray_structure()
   uc = xray_structure.unit_cell()
   temp = olex_xgrid.GetSize()
-  size = [int(temp[0]),int(temp[1]),int(temp[2])]
+  size = [int(temp[0]), int(temp[1]), int(temp[2])]
   name = OV.ModelSrc()
 
   n_atoms = int(olx.xf.au.GetAtomCount())
@@ -633,7 +633,7 @@ def plot_map_cube(map_type, resolution):
       for y in range(size[1]):
         string = ""
         for z in range(size[2]):
-          value = olex_xgrid.GetValue(x,y,z)
+          value = olex_xgrid.GetValue(x, y, z)
           string += ("%15.7e"%value)
           if (z+1) % 6 == 0 and (z+1) != size[2]:
             string += '\n'
@@ -762,7 +762,7 @@ def plot_fft_map_cube(fft_map, map_name, size=[]):
   except:
     values = fft_map
     temp = size
-  size = [int(temp[0]),int(temp[1]),int(temp[2])]
+  size = [int(temp[0]), int(temp[1]), int(temp[2])]
   name = OV.ModelSrc()
 
   n_atoms = int(olx.xf.au.GetAtomCount())
@@ -776,14 +776,14 @@ def plot_fft_map_cube(fft_map, map_name, size=[]):
           (cm[3] / (size[0]), cm[4] / (size[1]), cm[5] / (size[2])),
           (cm[6] / (size[0]), cm[7] / (size[1]), cm[8] / (size[2]))]
 
-  print ("start writing a %4d x %4d x %4d cube"%(size[0],size[1],size[2]))
+  print ("start writing a %4d x %4d x %4d cube"%(size[0], size[1], size[2]))
   
 
-  with open("%s_%s.cube" % (name,map_name), 'w') as cube:
+  with open("%s_%s.cube" % (name, map_name), 'w') as cube:
     cube.write("Fourier synthesis map created by Olex2\n")
     cube.write("Model name: %s\n" % name)
     # Origin of cube
-    cube.write("%6d %12.8f %12.8f %12.8f\n"%(n_atoms,0.0,0.0,0.0))
+    cube.write("%6d %12.8f %12.8f %12.8f\n"%(n_atoms, 0.0, 0.0, 0.0))
     # need to write vectors!
     cube.write("%6d %12.8f %12.8f %12.8f\n" % (size[0], vecs[0][0], vecs[1][0], vecs[2][0]))
     cube.write("%6d %12.8f %12.8f %12.8f\n" % (size[1], vecs[0][1], vecs[1][1], vecs[2][1]))
@@ -856,7 +856,7 @@ def residual_map(resolution=0.1, return_map=False, print_peaks=False):
   f_diff = f_diff.expand_to_p1()
   print("Using %d reflections for Fourier synthesis"%f_diff.size())
   diff_map = f_diff.fft_map(symmetry_flags=sgtbx.search_symmetry_flags(use_space_group_symmetry=False),
-                            resolution_factor=1,grid_step=float(resolution)).apply_volume_scaling()
+                            resolution_factor=1, grid_step=float(resolution)).apply_volume_scaling()
   if print_peaks is True or print_peaks == "True":
     from cctbx import maptbx
     max_peaks = 10
@@ -904,8 +904,8 @@ def det(U):
 
 
 def U_to_sigma(U):
-  U_loc = linalg.inv(np.array([U[0],U[3],U[4],U[3],U[1],U[5],U[4],U[5],U[2]]).reshape(3,3))
-  return [U_loc[0][0],U_loc[1][1],U_loc[2][2],U_loc[0][1],U_loc[0][2],U_loc[1][2]]
+  U_loc = linalg.inv(np.array([U[0], U[3], U[4], U[3], U[1], U[5], U[4], U[5], U[2]]).reshape(3, 3))
+  return [U_loc[0][0], U_loc[1][1], U_loc[2][2], U_loc[0][1], U_loc[0][2], U_loc[1][2]]
 
 
 def digest_boolinput(i):
@@ -1043,7 +1043,7 @@ def PDF_map(resolution=0.1, distance=1.0, second=True, third=True, fourth=True, 
                                   + diff[2] * (diff[0] * sigmas[a][4]
                                                + diff[1] * sigmas[a][5]
                                                + diff[2] * sigmas[a][2])),
-                          np.full((zi.size), 0))
+                          np.full(zi.size, 0))
       P0 = pre[a] * np.exp(mhalfuTUu)
       P0[abs(P0) < 1E-30] = 0
       fact = float(second)
@@ -1148,10 +1148,10 @@ def tomc_map(resolution=0.1, return_map=False, use_f000=False):
     f_diff = f_obs.f_obs_minus_f_calc(2.0/k, f_calc)
   
   f_diff = f_diff.expand_to_p1()
-  if use_f000 == True or use_f000 == "True":
+  if use_f000 is True or use_f000 == "True":
     f000 = float(olx.xf.GetF000())
     tomc_map = f_diff.fft_map(symmetry_flags=sgtbx.search_symmetry_flags(use_space_group_symmetry=False),
-                              resolution_factor=1,grid_step=float(resolution),
+                              resolution_factor=1, grid_step=float(resolution),
                               f_000=f000).apply_volume_scaling()
   else:
     tomc_map = f_diff.fft_map(symmetry_flags=sgtbx.search_symmetry_flags(use_space_group_symmetry=False),
@@ -1185,7 +1185,7 @@ def deformation_map(resolution=0.1, return_map=False):
   f_diff = f_calc.f_obs_minus_f_calc(1, f_calc_spher)
   f_diff = f_diff.expand_to_p1()
   def_map = f_diff.fft_map(symmetry_flags=sgtbx.search_symmetry_flags(use_space_group_symmetry=False),
-                           resolution_factor=1,grid_step=float(resolution)).apply_volume_scaling()
+                           resolution_factor=1, grid_step=float(resolution)).apply_volume_scaling()
   if return_map is True:
     return def_map
   plot_fft_map_cube(def_map, "deform")
@@ -1224,10 +1224,10 @@ def obs_map(resolution=0.1, return_map=False, use_f000=False):
                               f_000=f000).apply_volume_scaling()
   else:
     obs_map = f_obs.fft_map(symmetry_flags=sgtbx.search_symmetry_flags(use_space_group_symmetry=False),
-                              resolution_factor=1,grid_step=float(resolution)).apply_volume_scaling()
+                              resolution_factor=1, grid_step=float(resolution)).apply_volume_scaling()
   if return_map is True:
     return obs_map
-  plot_fft_map_cube(obs_map,"obs")
+  plot_fft_map_cube(obs_map, "obs")
 
 
 OV.registerFunction(obs_map, False, "NoSpherA2")
@@ -1250,7 +1250,7 @@ def calc_map(resolution=0.1, return_map=False, use_f000=False):
       f_sq_obs, f_calc = NoSpherA2_instance.f_obs_sq, NoSpherA2_instance.f_calc
   else:
     f_sq_obs, f_calc = cctbx_adapter.get_fo_sq_fc()
-  if use_f000 == True or use_f000 == "True":
+  if use_f000 is True or use_f000 == "True":
     f000 = float(olx.xf.GetF000())
     calc_map = f_calc.fft_map(symmetry_flags=sgtbx.search_symmetry_flags(use_space_group_symmetry=False),
                               resolution_factor=1, grid_step=float(resolution),
@@ -1260,7 +1260,7 @@ def calc_map(resolution=0.1, return_map=False, use_f000=False):
                               resolution_factor=1, grid_step=float(resolution)).apply_volume_scaling()
   if return_map is True:
     return calc_map
-  plot_fft_map_cube(calc_map,"calc")
+  plot_fft_map_cube(calc_map, "calc")
 
 
 OV.registerFunction(calc_map, False, "NoSpherA2")
