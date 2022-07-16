@@ -1020,7 +1020,7 @@ def PDF_map(resolution=0.1, distance=1.0, second=True, third=True, fourth=True, 
       if pre[a] < 0:
         continue
       u = b2a(np.array([pos[i] - posn[a][i] for i in range(3)])).T
-      mhalfuTUu = np.clip(-0.5 * np.sum(u * u @ sigmas_inv[a], axis=1),
+      mhalfuTUu = np.clip(-0.5 * np.sum(u * (u @ sigmas_inv[a]), axis=1),
                           a_min=None, a_max=0)
       p0 = pre[a] * np.exp(mhalfuTUu)
       p0[abs(p0) < 1E-30] = 0
