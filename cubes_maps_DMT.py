@@ -103,47 +103,6 @@ hermite_polynomials_of_4th_order = [HermitePolynomial(c) for c in
                                     HermitePolynomial.FOURTH_ORDER_COEFFICIENTS]
 
 
-def z_slice(z, x, y, vecs, posn, sigmas, pre, n_atoms, anharms, s, t, f) -> np.ndarray:
-  pos = [x * vecs[0][0] + y * vecs[0][1] + z * vecs[0][2],
-         x * vecs[1][0] + y * vecs[1][1] + z * vecs[1][2],
-         x * vecs[2][0] + y * vecs[2][1] + z * vecs[2][2]]
-  result = 0.0
-  for a in range(n_atoms):
-    if s is False and anharms[a] is None:
-      continue
-    # Skips NPD atoms
-    if pre[a] < 0: 
-      continue
-    diff = [(pos[0] - posn[a][0]) * a2b, (pos[1] - posn[a][1]) * a2b, (pos[2] - posn[a][2]) * a2b]
-    mhalfuTUu = np.fmin(-0.5 * (diff[0] * (diff[0] * sigmas[a][0]
-                                         + diff[1] * sigmas[a][3]
-                                         + diff[2] * sigmas[a][4])
-                              + diff[1] * (diff[0] * sigmas[a][3]
-                                         + diff[1] * sigmas[a][1]
-                                         + diff[2] * sigmas[a][5])
-                              + diff[2] * (diff[0] * sigmas[a][4]
-                                         + diff[1] * sigmas[a][5]
-                                         + diff[2] * sigmas[a][2])), np.full((z.size), 0))
-    P0 = pre[a] * np.exp(mhalfuTUu)
-    P0[abs(P0) < 1E-30] = 0
-    fact = float(s)
-    u = np.array(diff).T
-    si_inv = np.array([(sigmas[a][0], sigmas[a][3], sigmas[a][4]),
-                       (sigmas[a][3], sigmas[a][1], sigmas[a][5]),
-                       (sigmas[a][4], sigmas[a][5], sigmas[a][2])])
-    if anharms[a] is not None:
-      if t is True:
-        for i in range(10):
-          hermite = hermite_polynomials_of_3rd_order[i]
-          fact += anharms[a][i] * hermite(u, si_inv) / 6
-      if f is True:
-        for i in range(10, 25):
-          hermite = hermite_polynomials_of_4th_order[i - 10]
-          fact += anharms[a][i] * hermite(u, si_inv) / 24
-    result += P0 * fact
-  return result
-
-
 try:
   from_outside = False
   p_path = os.path.dirname(os.path.abspath(__file__))
@@ -1065,6 +1024,49 @@ def PDF_map(resolution=0.1, distance=1.0, second=True, third=True, fourth=True, 
     # zi_min, zi_max = 0, size[2]
     xyz_mesh_grid = np.mgrid[xi_min:xi_max, yi_min:yi_max, zi_min:zi_max]
     xi, yi, zi = map(np.ravel, xyz_mesh_grid)
+
+    def z_slice(z, x, y, vecs, posn, sigmas, pre, n_atoms, anharms, s, t,
+                f) -> np.ndarray:
+      pos = [x * vecs[0][0] + y * vecs[0][1] + z * vecs[0][2],
+             x * vecs[1][0] + y * vecs[1][1] + z * vecs[1][2],
+             x * vecs[2][0] + y * vecs[2][1] + z * vecs[2][2]]
+      result = 0.0
+      for a in range(n_atoms):
+        if s is False and anharms[a] is None:
+          continue
+        # Skips NPD atoms
+        if pre[a] < 0:
+          continue
+        diff = [(pos[0] - posn[a][0]) * a2b, (pos[1] - posn[a][1]) * a2b,
+                (pos[2] - posn[a][2]) * a2b]
+        mhalfuTUu = np.fmin(-0.5 * (diff[0] * (diff[0] * sigmas[a][0]
+                                               + diff[1] * sigmas[a][3]
+                                               + diff[2] * sigmas[a][4])
+                                    + diff[1] * (diff[0] * sigmas[a][3]
+                                                 + diff[1] * sigmas[a][1]
+                                                 + diff[2] * sigmas[a][5])
+                                    + diff[2] * (diff[0] * sigmas[a][4]
+                                                 + diff[1] * sigmas[a][5]
+                                                 + diff[2] * sigmas[a][2])),
+                            np.full((z.size), 0))
+        P0 = pre[a] * np.exp(mhalfuTUu)
+        P0[abs(P0) < 1E-30] = 0
+        fact = float(s)
+        u = np.array(diff).T
+        si_inv = np.array([(sigmas[a][0], sigmas[a][3], sigmas[a][4]),
+                           (sigmas[a][3], sigmas[a][1], sigmas[a][5]),
+                           (sigmas[a][4], sigmas[a][5], sigmas[a][2])])
+        if anharms[a] is not None:
+          if t is True:
+            for i in range(10):
+              hermite = hermite_polynomials_of_3rd_order[i]
+              fact += anharms[a][i] * hermite(u, si_inv) / 6
+          if f is True:
+            for i in range(10, 25):
+              hermite = hermite_polynomials_of_4th_order[i - 10]
+              fact += anharms[a][i] * hermite(u, si_inv) / 24
+        result += P0 * fact
+      return result
 
     res = z_slice(zi, xi, yi, vecs, posn, sigmas, pre, n_atoms, anharms,
                   bool(second), bool(third), bool(fourth))
