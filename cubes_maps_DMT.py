@@ -103,13 +103,13 @@ hermite_polynomials_of_4th_order = [HermitePolynomial(c) for c in
                                     HermitePolynomial.FOURTH_ORDER_COEFFICIENTS]
 
 
-def z_slice(z, x, y, vecs, posn, sigmas, pre, n_atoms, anharms, s, t, f, only_anh):
+def z_slice(z, x, y, vecs, posn, sigmas, pre, n_atoms, anharms, s, t, f):
   pos = [x * vecs[0][0] + y * vecs[0][1] + z * vecs[0][2],
          x * vecs[1][0] + y * vecs[1][1] + z * vecs[1][2],
          x * vecs[2][0] + y * vecs[2][1] + z * vecs[2][2]]
   result = 0.0
   for a in range(n_atoms):
-    if only_anh is True and anharms[a] is None:
+    if s is False and anharms[a] is None:
       continue
     # Skips NPD atoms
     if pre[a] < 0: 
@@ -952,13 +952,12 @@ def digest_boolinput(i):
     return True
 
 
-def PDF_map(resolution=0.1, distance=1.0, second=True, third=True, fourth=True, only_anh=True, do_plot=True, save_cube=False):
+def PDF_map(resolution=0.1, distance=1.0, second=True, third=True, fourth=True, do_plot=True, save_cube=False):
   second = digest_boolinput(second)
   third = digest_boolinput(third)
   fourth = digest_boolinput(fourth)
   do_plot = digest_boolinput(do_plot)
   save_cube = digest_boolinput(save_cube)
-  only_anh = digest_boolinput(only_anh)
   from cctbx import adptbx
   from cctbx.array_family import flex
   olex.m("kill $Q")
@@ -1030,7 +1029,7 @@ def PDF_map(resolution=0.1, distance=1.0, second=True, third=True, fourth=True, 
 # determine piece of grid that really needs evaluation
     dist_bohr = distance / a2b
     for a in range(n_atoms):
-      if second is False or only_anh is True:
+      if second is False:
         if anharms[a] is None:
           continue
       cart_minmax = [posn[a][0] - dist_bohr, posn[a][1] - dist_bohr, posn[a][2] - dist_bohr,
@@ -1069,7 +1068,7 @@ def PDF_map(resolution=0.1, distance=1.0, second=True, third=True, fourth=True, 
           y_loc += size[1]
         start = ((x_loc % size[0]) * size[1] + (y_loc % size[1])) * size[2]
         zs = np.array(range(limits[2][0], limits[2][1]))
-        res = z_slice(zs, x, y, vecs, posn, sigmas, pre, n_atoms, anharms, bool(second), bool(third), bool(fourth), only_anh)
+        res = z_slice(zs, x, y, vecs, posn, sigmas, pre, n_atoms, anharms, bool(second), bool(third), bool(fourth))
         for i, val in enumerate(res):
           z_loc = zs[i]
           if z_loc < 0:
