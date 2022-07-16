@@ -57,57 +57,62 @@ U_map = [[0, 3, 4],
          [4, 5, 2]]
 
 a2b = 0.529177210903
+
+
 def unique_permutations(v):
   f = np.math.factorial
   return f(len(v)) / np.prod([f(v.count(i)) for i in range(max(v) + 1)])
+
 
 def Hjkl(jkl, diff, sigma):
   wj = sum(sigma[U_map[jkl[0]][i]] * diff[i] for i in range(3))
   wk = sum(sigma[U_map[jkl[1]][i]] * diff[i] for i in range(3))
   wl = sum(sigma[U_map[jkl[2]][i]] * diff[i] for i in range(3))
-  result = unique_permutations(jkl) * (wj * wl * wk \
-         - wj * sigma[U_map[jkl[1]][jkl[2]]] \
-         - wk * sigma[U_map[jkl[2]][jkl[0]]] \
+  result = unique_permutations(jkl) * (wj * wl * wk
+         - wj * sigma[U_map[jkl[1]][jkl[2]]]
+         - wk * sigma[U_map[jkl[2]][jkl[0]]]
          - wl * sigma[U_map[jkl[0]][jkl[1]]])
   return result
+
 
 def Hjklm(jklm, diff, sigma):
   wj = sum(sigma[U_map[jklm[0]][i]] * diff[i] for i in range(3))
   wk = sum(sigma[U_map[jklm[1]][i]] * diff[i] for i in range(3))
   wl = sum(sigma[U_map[jklm[2]][i]] * diff[i] for i in range(3))
   wm = sum(sigma[U_map[jklm[3]][i]] * diff[i] for i in range(3))
-  result = unique_permutations(jklm) * (wj * wk * wl * wm \
-         - wj * wk * sigma[U_map[jklm[2]][jklm[3]]] \
-         - wj * wl * sigma[U_map[jklm[1]][jklm[3]]] \
-         - wj * wm * sigma[U_map[jklm[1]][jklm[2]]] \
-         - wk * wl * sigma[U_map[jklm[3]][jklm[0]]] \
-         - wk * wm * sigma[U_map[jklm[2]][jklm[0]]] \
-         - wl * wm * sigma[U_map[jklm[0]][jklm[1]]] \
-         + sigma[U_map[jklm[0]][jklm[1]]] * sigma[U_map[jklm[2]][jklm[3]]] \
-         + sigma[U_map[jklm[0]][jklm[2]]] * sigma[U_map[jklm[1]][jklm[3]]] \
+  result = unique_permutations(jklm) * (wj * wk * wl * wm
+         - wj * wk * sigma[U_map[jklm[2]][jklm[3]]]
+         - wj * wl * sigma[U_map[jklm[1]][jklm[3]]]
+         - wj * wm * sigma[U_map[jklm[1]][jklm[2]]]
+         - wk * wl * sigma[U_map[jklm[3]][jklm[0]]]
+         - wk * wm * sigma[U_map[jklm[2]][jklm[0]]]
+         - wl * wm * sigma[U_map[jklm[0]][jklm[1]]]
+         + sigma[U_map[jklm[0]][jklm[1]]] * sigma[U_map[jklm[2]][jklm[3]]]
+         + sigma[U_map[jklm[0]][jklm[2]]] * sigma[U_map[jklm[1]][jklm[3]]]
          + sigma[U_map[jklm[0]][jklm[3]]] * sigma[U_map[jklm[1]][jklm[2]]])
   return result
 
+
 def z_slice(z, x, y, vecs, posn, sigmas, pre, n_atoms, anharms, s, t, f, only_anh):
-  pos = [(x) * vecs[0][0] + (y) * vecs[0][1] + (z) * vecs[0][2],
-         (x) * vecs[1][0] + (y) * vecs[1][1] + (z) * vecs[1][2],
-         (x) * vecs[2][0] + (y) * vecs[2][1] + (z) * vecs[2][2]]
+  pos = [x * vecs[0][0] + y * vecs[0][1] + z * vecs[0][2],
+         x * vecs[1][0] + y * vecs[1][1] + z * vecs[1][2],
+         x * vecs[2][0] + y * vecs[2][1] + z * vecs[2][2]]
   result = 0.0
   for a in range(n_atoms):
     if only_anh == True and anharms[a] == None:
       continue
-    #Skips NPD atoms
+    # Skips NPD atoms
     if pre[a] < 0: 
       continue
     diff = [(pos[0] - posn[a][0]) * a2b, (pos[1] - posn[a][1]) * a2b, (pos[2] - posn[a][2]) * a2b]
-    mhalfuTUu = np.fmin(-0.5 * (diff[0] * (diff[0] * sigmas[a][0] \
-                                         + diff[1] * sigmas[a][3] \
-                                         + diff[2] * sigmas[a][4]) \
-                              + diff[1] * (diff[0] * sigmas[a][3] \
-                                         + diff[1] * sigmas[a][1] \
-                                         + diff[2] * sigmas[a][5]) \
-                              + diff[2] * (diff[0] * sigmas[a][4] \
-                                         + diff[1] * sigmas[a][5] \
+    mhalfuTUu = np.fmin(-0.5 * (diff[0] * (diff[0] * sigmas[a][0]
+                                         + diff[1] * sigmas[a][3]
+                                         + diff[2] * sigmas[a][4])
+                              + diff[1] * (diff[0] * sigmas[a][3]
+                                         + diff[1] * sigmas[a][1]
+                                         + diff[2] * sigmas[a][5])
+                              + diff[2] * (diff[0] * sigmas[a][4]
+                                         + diff[1] * sigmas[a][5]
                                          + diff[2] * sigmas[a][2])), np.full((z.size), 0))
     P0 = pre[a] * np.exp(mhalfuTUu)
     P0[abs(P0) < 1E-30] = 0
@@ -123,12 +128,14 @@ def z_slice(z, x, y, vecs, posn, sigmas, pre, n_atoms, anharms, s, t, f, only_an
     result += atom_P
   return result
 
+
 try:
   from_outside = False
   p_path = os.path.dirname(os.path.abspath(__file__))
 except:
   from_outside = True
   p_path = os.path.dirname(os.path.abspath("__file__"))
+
 
 def calculate_cubes():
   if NoSpherA2.is_disordered == True:
@@ -199,7 +206,9 @@ def calculate_cubes():
     return
   subprocess.Popen([pyl, os.path.join(p_path, "cube-launch.py")])
 
+
 OV.registerFunction(calculate_cubes,True,'NoSpherA2')
+
 
 def get_map_types():
   name = OV.ModelSrc()
@@ -240,7 +249,10 @@ def get_map_types():
   if list == "":
     return "None;"
   return list
+
+
 OV.registerFunction(get_map_types,True,'NoSpherA2')
+
 
 def change_map():
   Type = OV.GetParam('snum.NoSpherA2.map_type')
@@ -248,20 +260,20 @@ def change_map():
     return
   name = OV.ModelSrc()
   if Type == "ELI-D":
-    plot_cube(name+"_eli.cube",None)
+    plot_cube(name+"_eli.cube", None)
   elif Type == "Laplacian":
-    plot_cube(name+"_lap.cube",None)
+    plot_cube(name+"_lap.cube", None)
   elif Type == "ELF":
-    plot_cube(name+"_elf.cube",None)
+    plot_cube(name+"_elf.cube", None)
   elif Type == "ESP":
-    plot_cube(name+"_esp.cube",None)
+    plot_cube(name+"_esp.cube", None)
   elif Type == "Stat. Def.":
-    plot_cube(name+"_def.cube",None)
+    plot_cube(name+"_def.cube", None)
   elif Type == "NCI":
     OV.SetParam('snum.NoSpherA2.map_scale_name',"RGB")
     plot_cube(name+"_rdg.cube",name+"_signed_rho.cube")
   elif Type == "RDG":
-    plot_cube(name+"_rdg.cube",None)
+    plot_cube(name+"_rdg.cube", None)
   elif Type == "Rho + ESP":
     OV.SetParam('snum.NoSpherA2.map_scale_name',"BWR")
     plot_cube(name+"_rho.cube",name+"_esp.cube")
@@ -278,19 +290,25 @@ def change_map():
     olex.m("html.Update()")
   elif Type == "MO":
     number = int(OV.GetParam('snum.NoSpherA2.Property_MO_number')) -1
-    plot_cube(name+"_MO_"+str(number)+".cube",None)
+    plot_cube(name+"_MO_"+str(number)+".cube", None)
   elif Type == "HDEF":
     number = int(OV.GetParam('snum.NoSpherA2.Property_ATOM_number')) -1
-    plot_cube(name+"_HDEF_"+str(number)+".cube",None)
+    plot_cube(name+"_HDEF_"+str(number)+".cube", None)
   else:
     print("Sorry, no map type available or selected map type not correct!")
     return
+
+
 OV.registerFunction(change_map,True,'NoSpherA2')
+
 
 def change_pointsize():
   PS = OV.GetParam('snum.NoSpherA2.gl_pointsize')
   olex.m('gl.PointSize ' + PS)
-OV.registerFunction(change_pointsize,True,'NoSpherA2')
+
+
+OV.registerFunction(change_pointsize, True, 'NoSpherA2')
+
 
 def plot_cube(name,color_cube):
   if not os.path.isfile(name):
@@ -310,26 +328,26 @@ def plot_cube(name,color_cube):
   z_run = 0
   data = None
 
-  #min = 100000
-  #max = 0
+  # min = 100000
+  # max = 0
 
   for line in cube:
     run += 1
-    if (run==3):
+    if run == 3:
       values = line.split()
       na = int(values[0])
-    if (run==4):
+    if run == 4:
       values = line.split()
       x_size = int(values[0])
-    if (run==5):
+    if run == 5:
       values = line.split()
       y_size = int(values[0])
-    if (run==6):
+    if run == 6:
       values = line.split()
       z_size = int(values[0])
       data = flex.double(x_size * y_size * z_size)
       data.reshape(flex.grid(x_size, y_size, z_size))
-    if (run > na + 6):
+    if run > na + 6:
       values = line.split()
       for i in range(len(values)):
         v = float(values[i])
@@ -353,7 +371,7 @@ def plot_cube(name,color_cube):
       cube2 = cub.readlines()
 
     run = 0
-    #na2 = 0
+    # na2 = 0
     x_size2 = 0
     y_size2 = 0
     z_size2 = 0
@@ -364,21 +382,21 @@ def plot_cube(name,color_cube):
 
     for line in cube2:
       run += 1
-      if (run==3):
+      if run == 3:
         values = line.split()
-        #na2 = int(values[0])
-      if (run==4):
+        # na2 = int(values[0])
+      if run == 4:
         values = line.split()
         x_size2 = int(values[0])
-      if (run==5):
+      if run == 5:
         values = line.split()
         y_size2 = int(values[0])
-      if (run==6):
+      if run == 6:
         values = line.split()
         z_size2 = int(values[0])
         data2 = flex.double(x_size2 * y_size2 * z_size2)
         data2.reshape(flex.grid(x_size2, y_size2, z_size2))
-      if (run > na + 6):
+      if run > na + 6:
         values = line.split()
         for i in range(len(values)):
           data2[x_run][y_run][z_run] = float(values[i])
@@ -399,13 +417,13 @@ def plot_cube(name,color_cube):
     y_run = None
     x_run = None
     na = None
-    #na2 = None
+    # na2 = None
     line = None
     run = None
-    olex_xgrid.Init(x_size,y_size,z_size,True)
+    olex_xgrid.Init(x_size, y_size, z_size, True)
 
     def interpolate(x,y,z):
-      #trilinear interpolation between the points... sorry for the mess
+      # trilinear interpolation between the points... sorry for the mess
       x_1 = x/x_size
       y_1 = y/y_size
       z_1 = z/z_size
@@ -431,7 +449,7 @@ def plot_cube(name,color_cube):
 
 
     value = [[[float(0.0) for k in range(z_size)] for j in range(y_size)] for i in range(x_size)]
-    i=None
+    i = None
     if x_size == x_size2 and y_size == y_size2 and z_size == z_size2:
       for x in range(x_size):
         for y in range(y_size):
@@ -460,54 +478,56 @@ def plot_cube(name,color_cube):
   if Type == "Laplacian":
     OV.SetVar('map_min', 0)
     OV.SetVar('map_max', 40)
-    OV.SetVar('map_slider_scale',40)
+    OV.SetVar('map_slider_scale', 40)
   elif Type == "ELI-D":
-    OV.SetVar('map_min',0)
-    OV.SetVar('map_max',60)
-    OV.SetVar('map_slider_scale',20)
+    OV.SetVar('map_min', 0)
+    OV.SetVar('map_max', 60)
+    OV.SetVar('map_slider_scale', 20)
   elif Type == "ELF":
-    OV.SetVar('map_min',0)
-    OV.SetVar('map_max',40)
-    OV.SetVar('map_slider_scale',40)
+    OV.SetVar('map_min', 0)
+    OV.SetVar('map_max', 40)
+    OV.SetVar('map_slider_scale', 40)
   elif Type == "ESP":
-    OV.SetVar('map_min',0)
-    OV.SetVar('map_max',50)
-    OV.SetVar('map_slider_scale',50)
+    OV.SetVar('map_min', 0)
+    OV.SetVar('map_max', 50)
+    OV.SetVar('map_slider_scale', 50)
   elif Type == "NCI":
-    OV.SetVar('map_min',0)
-    OV.SetVar('map_max',50)
-    OV.SetVar('map_slider_scale',100)
+    OV.SetVar('map_min', 0)
+    OV.SetVar('map_max', 50)
+    OV.SetVar('map_slider_scale', 100)
   elif Type == "RDG":
-    OV.SetVar('map_min',0)
-    OV.SetVar('map_max',50)
-    OV.SetVar('map_slider_scale',100)
+    OV.SetVar('map_min', 0)
+    OV.SetVar('map_max', 50)
+    OV.SetVar('map_slider_scale', 100)
   elif Type == "Rho + ESP":
-    OV.SetVar('map_min',0)
-    OV.SetVar('map_max',50)
-    OV.SetVar('map_slider_scale',100)
+    OV.SetVar('map_min', 0)
+    OV.SetVar('map_max', 50)
+    OV.SetVar('map_slider_scale', 100)
   elif Type == "MO":
-    OV.SetVar('map_min',0)
-    OV.SetVar('map_max',50)
-    OV.SetVar('map_slider_scale',100)
+    OV.SetVar('map_min', 0)
+    OV.SetVar('map_max', 50)
+    OV.SetVar('map_slider_scale', 100)
   elif Type == "HDEF":
-    OV.SetVar('map_min',0)
-    OV.SetVar('map_max',50)
-    OV.SetVar('map_slider_scale',100)
+    OV.SetVar('map_min', 0)
+    OV.SetVar('map_max', 50)
+    OV.SetVar('map_slider_scale', 100)
   elif Type == "Stat. Def.":
-    OV.SetVar('map_min',0)
-    OV.SetVar('map_max',50)
+    OV.SetVar('map_min', 0)
+    OV.SetVar('map_max', 50)
     OV.SetVar('map_slider_scale', 100)
   mmm = data.as_1d().min_max_mean()
   mi = mmm.min
   ma = mmm.max
   olex_xgrid.SetMinMax(mmm.min, mmm.max)
   olex_xgrid.SetVisible(True)
-  olex_xgrid.InitSurface(True,1)
-  iso = float((abs(mi)+abs(ma))*2/3)
+  olex_xgrid.InitSurface(True, 1)
+  iso = float((abs(mi) + abs(ma)) * 2 / 3)
   olex_xgrid.SetSurfaceScale(iso)
-  OV.SetParam('snum.xgrid.scale',"{:.3f}".format(iso))
+  OV.SetParam('snum.xgrid.scale', "{:.3f}".format(iso))
+
 
 OV.registerFunction(plot_cube,True,'NoSpherA2')
+
 
 def plot_cube_single(name):
   if not os.path.isfile(name):
@@ -532,20 +552,20 @@ def plot_cube_single(name):
 
   for line in cube:
     run += 1
-    if (run==3):
+    if run == 3:
       values = line.split()
       na = int(values[0])
-    if (run==4):
+    if run == 4:
       values = line.split()
       x_size = int(values[0])
-    if (run==5):
+    if run == 5:
       values = line.split()
       y_size = int(values[0])
-    if (run==6):
+    if run == 6:
       values = line.split()
       z_size = int(values[0])
       data = [[[float(0.0) for k in range(z_size)] for j in range(y_size)] for i in range(x_size)]
-    if (run > na + 6):
+    if run > na + 6:
       values = line.split()
       for i in range(len(values)):
         data[x_run][y_run][z_run] = float(values[i])
@@ -582,7 +602,9 @@ def plot_cube_single(name):
   olex_xgrid.SetSurfaceScale(iso)
   OV.SetParam('snum.xgrid.scale',"{:.3f}".format(iso))
 
+
 OV.registerFunction(plot_cube_single,True,'NoSpherA2')
+
 
 def plot_map_cube(map_type,resolution):
   olex.m('CalcFourier -fcf -%s -r=%s'%(map_type,resolution))
@@ -641,14 +663,16 @@ def plot_map_cube(map_type,resolution):
         if (y != (size[1] - 1)):
           string += '\n'
         cube.write(string)
-      if(x != (size[0] -1)):
+      if x != (size[0] - 1):
         cube.write('\n')
 
     cube.close()
 
   print("Saved Fourier map successfully")
 
-OV.registerFunction(plot_map_cube,True,'NoSpherA2')
+
+OV.registerFunction(plot_map_cube, True, 'NoSpherA2')
+
 
 def get_color(value):
   a = 127
@@ -657,7 +681,7 @@ def get_color(value):
   r = 0
   scale_min = OV.GetParam('snum.NoSpherA2.map_scale_min')
   scale_max = OV.GetParam('snum.NoSpherA2.map_scale_max')
-  scale = OV.GetParam('snum.NoSpherA2.map_scale_name') #BWR = Blue White Red; RGB = Red Green Blue
+  scale = OV.GetParam('snum.NoSpherA2.map_scale_name') # BWR = Blue White Red; RGB = Red Green Blue
   x = 0
   if value <= float(scale_min):
     x = 0
@@ -696,7 +720,10 @@ def get_color(value):
   if value == "0.00101":
     print(rgba)
   return rgba
-OV.registerFunction(get_color,True,'NoSpherA2')
+
+
+OV.registerFunction(get_color, True, 'NoSpherA2')
+
 
 def is_colored():
   Type = OV.GetParam('snum.NoSpherA2.map_type')
@@ -706,7 +733,10 @@ def is_colored():
     return True
   else:
     return False
-OV.registerFunction(is_colored,True,'NoSpherA2')
+
+
+OV.registerFunction(is_colored, True, 'NoSpherA2')
+
 
 def plot_fft_map(fft_map):
   data = fft_map.real_map_unpadded()
@@ -725,10 +755,12 @@ def plot_fft_map(fft_map):
   olex_xgrid.InitSurface(True, -100)
   iso = float(-sigma*3.3)
   olex_xgrid.SetSurfaceScale(iso)
-  print("Map max val %.3f min val %.3f RMS: %.3f"%(max_v,min_v,sigma))
-  print("Map size: %d x %d x %d"%(fft_map.n_real()[0],fft_map.n_real()[1],fft_map.n_real()[2]))
+  print("Map max val %.3f min val %.3f RMS: %.3f" % (max_v, min_v, sigma))
+  print("Map size: %d x %d x %d" % (fft_map.n_real()[0], fft_map.n_real()[1], fft_map.n_real()[2]))
+
 
 OV.registerFunction(plot_fft_map, True, 'NoSpherA2')
+
 
 def plot_map(data, iso, dist=1.0, min_v=0, max_v=20):
   gridding = data.accessor()
@@ -741,6 +773,7 @@ def plot_map(data, iso, dist=1.0, min_v=0, max_v=20):
   olex.m("xgrid.RenderMode(line)")
   olex_xgrid.SetSurfaceScale(iso)
   olex_xgrid.SetVisible(True)
+
 
 def plot_fft_map_cube(fft_map, map_name, size=[]):
   cctbx_adapter = OlexCctbxAdapter()
@@ -772,7 +805,7 @@ def plot_fft_map_cube(fft_map, map_name, size=[]):
   print ("start writing a %4d x %4d x %4d cube"%(size[0],size[1],size[2]))
   
 
-  with open("%s_%s.cube"%(name,map_name),'w') as cube:
+  with open("%s_%s.cube" % (name,map_name), 'w') as cube:
     cube.write("Fourier synthesis map created by Olex2\n")
     cube.write("Model name: %s\n"%name)
     # Origin of cube
@@ -798,15 +831,16 @@ def plot_fft_map_cube(fft_map, map_name, size=[]):
           string += ("%15.7e"%values[(x*size[1]+y)*size[2]+z])
           if (z+1) % 6 == 0 and (z+1) != size[2]:
             string += '\n'
-        if (y != (size[1] - 1)):
+        if y != (size[1] - 1):
           string += '\n'
         cube.write(string)
-      if(x != (size[0] -1)):
+      if x != (size[0] - 1):
         cube.write('\n')
 
     cube.close()
 
   print("Saved Fourier map successfully")
+
 
 def residual_map(resolution=0.1,return_map=False,print_peaks=False):
   cctbx_adapter = OlexCctbxAdapter()
@@ -861,7 +895,7 @@ def residual_map(resolution=0.1,return_map=False,print_peaks=False):
       verify_symmetry=True
       ).all()
     i = 0
-    olx.Kill('$Q', au=True) #HP-JUL18 -- Why kill the peaks? -- cause otherwise they accumulate! #HP4/9/18
+    olx.Kill('$Q', au=True) # HP-JUL18 -- Why kill the peaks? -- cause otherwise they accumulate! #HP4/9/18
     for xyz, height in zip(peaks.sites(), peaks.heights()):
       if i < max_peaks:
         a = olx.xf.uc.Closest(*xyz).split(',')
@@ -877,15 +911,16 @@ def residual_map(resolution=0.1,return_map=False,print_peaks=False):
     if OV.HasGUI():
       basis = olx.gl.Basis()
       frozen = olx.Freeze(True)
-    olx.xf.EndUpdate(True) #clear LST
+    olx.xf.EndUpdate(True)  # clear LST
     olx.Compaq(q=True)
     if OV.HasGUI():
       olx.gl.Basis(basis)
       olx.Freeze(frozen)
       OV.Refresh()
-  if return_map==True:
+  if return_map == True:
     return diff_map
-  plot_fft_map_cube(diff_map,"diff")
+  plot_fft_map_cube(diff_map, "diff")
+
 
 OV.registerFunction(residual_map, False, "NoSpherA2")
 
@@ -896,11 +931,13 @@ def U_to_sigma(U):
   U_loc = linalg.inv(np.array([U[0],U[3],U[4],U[3],U[1],U[5],U[4],U[5],U[2]]).reshape(3,3))
   return [U_loc[0][0],U_loc[1][1],U_loc[2][2],U_loc[0][1],U_loc[0][2],U_loc[1][2]]
 
+
 def digest_boolinput(i):
   if i == False or i == "False" or i == "0":
     return False
   else:
     return True
+
 
 def PDF_map(resolution=0.1, distance=1.0, second=True, third=True, fourth=True, only_anh=True, do_plot=True, save_cube=False):
   second = digest_boolinput(second)
@@ -1048,9 +1085,9 @@ def PDF_map(resolution=0.1, distance=1.0, second=True, third=True, fourth=True, 
       index -= x * size[2] * size[1]
       y = math.floor(index / size[2])
       z = index % size[2]
-      pos = [(x) * vecs[0][0] + (y) * vecs[0][1] + (z) * vecs[0][2],
-             (x) * vecs[1][0] + (y) * vecs[1][1] + (z) * vecs[1][2],
-             (x) * vecs[2][0] + (y) * vecs[2][1] + (z) * vecs[2][2]]
+      pos = [x * vecs[0][0] + y * vecs[0][1] + z * vecs[0][2],
+             x * vecs[1][0] + y * vecs[1][1] + z * vecs[1][2],
+             x * vecs[2][0] + y * vecs[2][1] + z * vecs[2][2]]
       min_dist = cm[0] + cm[4] + cm[8]
       atom_nr = 0
       for i in range(n_atoms):
@@ -1077,7 +1114,10 @@ def PDF_map(resolution=0.1, distance=1.0, second=True, third=True, fourth=True, 
 
   OV.DeleteBitmap("working")
   print("PDF Maps as implemented and tested by Florian Kleemiss and Daniel Tchon!")
+
+
 OV.registerFunction(PDF_map, False, "NoSpherA2")
+
 
 def tomc_map(resolution=0.1, return_map=False, use_f000=False):
   cctbx_adapter = OlexCctbxAdapter()
@@ -1126,9 +1166,11 @@ def tomc_map(resolution=0.1, return_map=False, use_f000=False):
                               resolution_factor=1, grid_step=float(resolution)).apply_volume_scaling()
   if return_map == True:
     return tomc_map
-  plot_fft_map_cube(tomc_map,"tomc")
+  plot_fft_map_cube(tomc_map, "tomc")
+
 
 OV.registerFunction(tomc_map, False, "NoSpherA2")
+
 
 def deformation_map(resolution=0.1, return_map=False):
   use_tsc = OV.GetParam('snum.NoSpherA2.use_aspherical')
@@ -1152,11 +1194,13 @@ def deformation_map(resolution=0.1, return_map=False):
   f_diff = f_diff.expand_to_p1()
   def_map = f_diff.fft_map(symmetry_flags=sgtbx.search_symmetry_flags(use_space_group_symmetry=False),
                            resolution_factor=1,grid_step=float(resolution)).apply_volume_scaling()
-  if return_map==True:
+  if return_map == True:
     return def_map
   plot_fft_map_cube(def_map,"deform")
 
+
 OV.registerFunction(deformation_map, False, "NoSpherA2")
+
 
 def obs_map(resolution=0.1, return_map=False, use_f000=False):
   cctbx_adapter = OlexCctbxAdapter()
@@ -1193,7 +1237,9 @@ def obs_map(resolution=0.1, return_map=False, use_f000=False):
     return obs_map
   plot_fft_map_cube(obs_map,"obs")
 
+
 OV.registerFunction(obs_map, False, "NoSpherA2")
+
 
 def calc_map(resolution=0.1,return_map=False, use_f000=False):
   cctbx_adapter = OlexCctbxAdapter()
@@ -1224,18 +1270,21 @@ def calc_map(resolution=0.1,return_map=False, use_f000=False):
     return calc_map
   plot_fft_map_cube(calc_map,"calc")
 
+
 OV.registerFunction(calc_map, False, "NoSpherA2")
 
-def show_fft_map(resolution=0.1,map_type="diff",use_f000=False,print_peaks=False):
+
+def show_fft_map(resolution=0.1, map_type="diff", use_f000=False, print_peaks=False):
   if map_type == "diff":
-    plot_fft_map(residual_map(resolution, return_map=True,print_peaks=print_peaks))
+    plot_fft_map(residual_map(resolution, return_map=True, print_peaks=print_peaks))
   elif map_type == "fcfmc":
     plot_fft_map(deformation_map(resolution, return_map=True))
   elif map_type == "obs":
-    plot_fft_map(obs_map(resolution,return_map=True,use_f000=use_f000))
+    plot_fft_map(obs_map(resolution, return_map=True, use_f000=use_f000))
   elif map_type == "calc":
-    plot_fft_map(calc_map(resolution,return_map=True,use_f000=use_f000))
+    plot_fft_map(calc_map(resolution, return_map=True, use_f000=use_f000))
   elif map_type == "tomc":
-    plot_fft_map(tomc_map(resolution,return_map=True,use_f000=use_f000))
+    plot_fft_map(tomc_map(resolution, return_map=True, use_f000=use_f000))
+
 
 OV.registerFunction(show_fft_map, False, "NoSpherA2")
