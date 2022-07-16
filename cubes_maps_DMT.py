@@ -63,11 +63,6 @@ U_map = [[0, 3, 4],
 a2b = 0.529177210903
 
 
-def unique_permutations(v):
-  f = np.math.factorial
-  return f(len(v)) / np.prod([f(v.count(i)) for i in range(max(v) + 1)])
-
-
 class HermitePolynomial:
   def __init__(self, coefficients: Sequence[int]):
     self.coefficients = coefficients
@@ -115,36 +110,6 @@ class HermitePolynomial:
   @staticmethod
   def w(coefficient: int, u: np.ndarray, si_inv: np.ndarray):
     return sum(si_inv[coefficient - 1, i] * u[:, i] for i in range(3))
-
-
-def Hjkl(jkl, diff, sigma):
-  wj = sum(sigma[U_map[jkl[0]][i]] * diff[i] for i in range(3))
-  wk = sum(sigma[U_map[jkl[1]][i]] * diff[i] for i in range(3))
-  wl = sum(sigma[U_map[jkl[2]][i]] * diff[i] for i in range(3))
-  result = unique_permutations(jkl) * (wj * wl * wk
-         - wj * sigma[U_map[jkl[1]][jkl[2]]]
-         - wk * sigma[U_map[jkl[2]][jkl[0]]]
-         - wl * sigma[U_map[jkl[0]][jkl[1]]])
-  return result
-
-
-def Hjklm(jklm, diff, sigma):
-  wj = sum(sigma[U_map[jklm[0]][i]] * diff[i] for i in range(3))
-  wk = sum(sigma[U_map[jklm[1]][i]] * diff[i] for i in range(3))
-  wl = sum(sigma[U_map[jklm[2]][i]] * diff[i] for i in range(3))
-  wm = sum(sigma[U_map[jklm[3]][i]] * diff[i] for i in range(3))
-  result = unique_permutations(jklm) * (
-          wj * wk * wl * wm
-          - wj * wk * sigma[U_map[jklm[2]][jklm[3]]]
-          - wj * wl * sigma[U_map[jklm[1]][jklm[3]]]
-          - wj * wm * sigma[U_map[jklm[1]][jklm[2]]]
-          - wk * wl * sigma[U_map[jklm[3]][jklm[0]]]
-          - wk * wm * sigma[U_map[jklm[2]][jklm[0]]]
-          - wl * wm * sigma[U_map[jklm[0]][jklm[1]]]
-          + sigma[U_map[jklm[0]][jklm[1]]] * sigma[U_map[jklm[2]][jklm[3]]]
-          + sigma[U_map[jklm[0]][jklm[2]]] * sigma[U_map[jklm[1]][jklm[3]]]
-          + sigma[U_map[jklm[0]][jklm[3]]] * sigma[U_map[jklm[1]][jklm[2]]])
-  return result
 
 
 def z_slice(z, x, y, vecs, posn, sigmas, pre, n_atoms, anharms, s, t, f, only_anh):
