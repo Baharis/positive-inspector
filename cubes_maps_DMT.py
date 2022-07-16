@@ -10,7 +10,7 @@ from typing import List, Sequence, Union
 from olexFunctions import OV
 from cctbx_olex_adapter import OlexCctbxAdapter
 from smtbx.structure_factors import direct
-from cctbx import sgtbx
+from cctbx import adptbx, maptbx, sgtbx
 from cctbx.array_family import flex
 from cctbx_olex_adapter import OlexCctbxMasks
 import olex_xgrid
@@ -250,15 +250,15 @@ def change_map():
   elif Type == "Stat. Def.":
     plot_cube(name+"_def.cube", None)
   elif Type == "NCI":
-    OV.SetParam('snum.NoSpherA2.map_scale_name',"RGB")
+    OV.SetParam('snum.NoSpherA2.map_scale_name', "RGB")
     plot_cube(name+"_rdg.cube", name+"_signed_rho.cube")
   elif Type == "RDG":
     plot_cube(name+"_rdg.cube", None)
   elif Type == "Rho + ESP":
-    OV.SetParam('snum.NoSpherA2.map_scale_name',"BWR")
+    OV.SetParam('snum.NoSpherA2.map_scale_name', "BWR")
     plot_cube(name+"_rho.cube", name+"_esp.cube")
   elif Type == "fcfmc" or Type == "diff" or Type == "tomc" or Type == "fobs" or Type == "fcalc":
-    OV.SetVar('map_slider_scale',-50)
+    OV.SetVar('map_slider_scale', -50)
     OV.SetParam('snum.map.type', Type)
     show_fft_map(float(OV.GetParam('snum.NoSpherA2.map_resolution')), map_type=Type)
     minimal = float(olx.xgrid.GetMin())
@@ -266,20 +266,20 @@ def change_map():
     if -minimal > maximal:
       maximal = -minimal
     OV.SetVar('map_min', 0)
-    OV.SetVar('map_max', maximal*50)
+    OV.SetVar('map_max', maximal * 50)
     olex.m("html.Update()")
   elif Type == "MO":
     number = int(OV.GetParam('snum.NoSpherA2.Property_MO_number')) -1
-    plot_cube(name+"_MO_"+str(number)+".cube", None)
+    plot_cube(name + "_MO_" + str(number) + ".cube", None)
   elif Type == "HDEF":
     number = int(OV.GetParam('snum.NoSpherA2.Property_ATOM_number')) -1
-    plot_cube(name+"_HDEF_"+str(number)+".cube", None)
+    plot_cube(name + "_HDEF_" + str(number) + ".cube", None)
   else:
     print("Sorry, no map type available or selected map type not correct!")
     return
 
 
-OV.registerFunction(change_map, True,'NoSpherA2')
+OV.registerFunction(change_map, True, 'NoSpherA2')
 
 
 def change_pointsize():
@@ -424,9 +424,7 @@ def plot_cube(name, color_cube):
       a_5 = data2[ix2][iy2][iz2] * iy21 - data2[ix2][iy2][iz21] * iy2 - data2[ix2][iy21][iz2] * iy21 + data2[ix2][iy2][iz21] * iy2 - data2[ix21][iy2][iz2] * iy21 + data2[ix21][iy2][iz21] * iy2 + data2[ix21][iy21][iz2] * iy21 - data2[ix21][iy21][iz21] * iy2
       a_6 = data2[ix2][iy2][iz2] * ix21 - data2[ix2][iy2][iz21] * ix2 - data2[ix2][iy21][iz2] * ix21 + data2[ix2][iy2][iz21] * ix2 - data2[ix21][iy2][iz2] * ix21 + data2[ix21][iy2][iz21] * ix2 + data2[ix21][iy21][iz2] * ix21 - data2[ix21][iy21][iz21] * ix2
       a_7 = -(data2[ix2][iy2][iz2] - data2[ix2][iy2][iz21] - data2[ix2][iy21][iz2] + data2[ix2][iy2][iz21] - data2[ix21][iy2][iz2] + data2[ix21][iy2][iz21] + data2[ix21][iy21][iz2] - data2[ix21][iy21][iz21])
-
       return a_0 + a_1 * ix2 + a_2 * iy2 + a_3 * z_2 + a_4 * x_2 * y_2 + a_5 * x_2 * z_2 + a_6 * y_2 * z_2 + a_7 * x_2 * y_2 * z_2
-
 
     value = [[[float(0.0) for k in range(z_size)] for j in range(y_size)] for i in range(x_size)]
     i = None
@@ -578,7 +576,7 @@ def plot_cube_single(name):
   olex_xgrid.SetMinMax(min_, max_)
   olex_xgrid.SetVisible(True)
   olex_xgrid.InitSurface(True, 1)
-  iso = float((abs(min_)+abs(max_))*2/3)
+  iso = float((abs(min_) + abs(max_))*2/3)
   olex_xgrid.SetSurfaceScale(iso)
   OV.SetParam('snum.xgrid.scale', "{:.3f}".format(iso))
 
@@ -588,7 +586,6 @@ OV.registerFunction(plot_cube_single, True, 'NoSpherA2')
 
 def plot_map_cube(map_type, resolution):
   olex.m('CalcFourier -fcf -%s -r=%s' % (map_type, resolution))
-  import math
   cctbx_adapter = OlexCctbxAdapter()
   xray_structure = cctbx_adapter.xray_structure()
   uc = xray_structure.unit_cell()
@@ -597,7 +594,7 @@ def plot_map_cube(map_type, resolution):
   name = OV.ModelSrc()
 
   n_atoms = int(olx.xf.au.GetAtomCount())
-  positions = [[float(0.0) for k in range(3)] for l in range(n_atoms)]
+  positions = [[0., 0., 0.] for _ in range(n_atoms)]
   cm = a2b(np.array(uc.orthogonalization_matrix()))
   for a in range(n_atoms):
     coord = olx.xf.au.GetAtomCrd(a)
@@ -718,7 +715,6 @@ OV.registerFunction(is_colored, True, 'NoSpherA2')
 def plot_fft_map(fft_map):
   data = fft_map.real_map_unpadded()
   gridding = data.accessor()
-  from cctbx.array_family import flex
   type = isinstance(data, flex.int)
   olex_xgrid.Import(
     gridding.all(), gridding.focus(), data.copy_to_byte_str(), type)
@@ -741,7 +737,6 @@ OV.registerFunction(plot_fft_map, True, 'NoSpherA2')
 
 def plot_map(data, iso, dist=1.0, min_v=0, max_v=20):
   gridding = data.accessor()
-  from cctbx.array_family import flex
   type = isinstance(data, flex.int)
   olex_xgrid.Import(
     gridding.all(), gridding.focus(), data.copy_to_byte_str(), type)
@@ -766,7 +761,7 @@ def plot_fft_map_cube(fft_map, map_name, size=[]):
   name = OV.ModelSrc()
 
   n_atoms = int(olx.xf.au.GetAtomCount())
-  positions = [[float(0.0) for k in range(3)] for l in range(n_atoms)]
+  positions = [[0., 0., 0.] for _ in range(n_atoms)]
   cm = a2b(np.array(uc.orthogonalization_matrix()))
   for a in range(n_atoms):
       pos = olx.xf.au.Orthogonalise(olx.xf.au.GetAtomCrd(a)).split(',')
@@ -776,8 +771,7 @@ def plot_fft_map_cube(fft_map, map_name, size=[]):
           (cm[3] / (size[0]), cm[4] / (size[1]), cm[5] / (size[2])),
           (cm[6] / (size[0]), cm[7] / (size[1]), cm[8] / (size[2]))]
 
-  print ("start writing a %4d x %4d x %4d cube"%(size[0], size[1], size[2]))
-  
+  print("start writing a %4d x %4d x %4d cube"%(size[0], size[1], size[2]))
 
   with open("%s_%s.cube" % (name, map_name), 'w') as cube:
     cube.write("Fourier synthesis map created by Olex2\n")
@@ -854,11 +848,11 @@ def residual_map(resolution=0.1, return_map=False, print_peaks=False):
     k = math.sqrt(OV.GetOSF())
     f_diff = f_obs.f_obs_minus_f_calc(1.0/k, f_calc)
   f_diff = f_diff.expand_to_p1()
-  print("Using %d reflections for Fourier synthesis"%f_diff.size())
+  print("Using %d reflections for Fourier synthesis" % f_diff.size())
   diff_map = f_diff.fft_map(symmetry_flags=sgtbx.search_symmetry_flags(use_space_group_symmetry=False),
                             resolution_factor=1, grid_step=float(resolution)).apply_volume_scaling()
   if print_peaks is True or print_peaks == "True":
-    from cctbx import maptbx
+
     max_peaks = 10
     peaks = diff_map.peak_search(
       parameters=maptbx.peak_search_parameters(
@@ -869,7 +863,7 @@ def residual_map(resolution=0.1, return_map=False, print_peaks=False):
       verify_symmetry=True
       ).all()
     i = 0
-    olx.Kill('$Q', au=True) # HP-JUL18 -- Why kill the peaks? -- cause otherwise they accumulate! #HP4/9/18
+    olx.Kill('$Q', au=True)  # HP-JUL18 -- Why kill the peaks? -- cause otherwise they accumulate! #HP4/9/18
     for xyz, height in zip(peaks.sites(), peaks.heights()):
       if i < max_peaks:
         a = olx.xf.uc.Closest(*xyz).split(',')
@@ -921,8 +915,6 @@ def PDF_map(resolution=0.1, distance=1.0, second=True, third=True, fourth=True, 
   fourth = digest_boolinput(fourth)
   do_plot = digest_boolinput(do_plot)
   save_cube = digest_boolinput(save_cube)
-  from cctbx import adptbx
-  from cctbx.array_family import flex
   olex.m("kill $Q")
   OV.CreateBitmap("working")
   try:
