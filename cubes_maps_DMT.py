@@ -928,7 +928,8 @@ def PDF_map(resolution=0.1, distance=1.0, second=True, third=True, fourth=True, 
     pre = []
     posn = []
     anharms = []
-    for atom in cctbx_adapter.xray_structure()._scatterers:
+    atoms = cctbx_adapter.xray_structure()._scatterers
+    for atom in atoms:
       coordinates = np.array(uc.orthogonalize(atom.site))
       posn.append(a2b(coordinates))
       adp = atom.u_star
@@ -946,7 +947,7 @@ def PDF_map(resolution=0.1, distance=1.0, second=True, third=True, fourth=True, 
       sigmas.append(U_to_sigma(adp_cart))
       pre_temp = det(sigmas[-1])
       if pre_temp < 0:
-        print("Skipping NPD Atom %s" % atom.label)
+        print("Skipping NPD Atom", atom.label)
         pre_temp = -math.sqrt(-pre_temp) / fixed
       else:
         pre_temp = math.sqrt(pre_temp) / fixed
@@ -974,9 +975,9 @@ def PDF_map(resolution=0.1, distance=1.0, second=True, third=True, fourth=True, 
               [size[1], 0],
               [size[2], 0]]
 
-# determine piece of grid that really needs evaluation
+    # determine piece of grid that really needs evaluation
     dist_bohr = a2b(distance)
-    for a in range(n_atoms):
+    for a, atom in enumerate(atoms):
       if second is False:
         if anharms[a] is None:
           continue
@@ -989,7 +990,7 @@ def PDF_map(resolution=0.1, distance=1.0, second=True, third=True, fourth=True, 
                      posn[a][0] - dist_bohr, posn[a][1] + dist_bohr, posn[a][2] - dist_bohr,
                      posn[a][0] + dist_bohr, posn[a][1] - dist_bohr, posn[a][2] + dist_bohr,
                      ]
-      minmax = [0 for x in range(24)]
+      minmax = [0, ] * 24
       for i in range(3):
         for j in range(3):
           for k in range(8):
@@ -1080,24 +1081,22 @@ def PDF_map(resolution=0.1, distance=1.0, second=True, third=True, fourth=True, 
         if dist < min_dist:
           min_dist = dist
           atom_nr = i
-      print("WARNING! Significant negative PDF for Atom: " + str(cctbx_adapter.xray_structure()._scatterers[atom_nr].label))
-      print("WARNING! At a distance of {:8.3f} Angs".format(min_dist))
+      print("WARNING! Significant negative PDF for Atom:", str(atoms[atom_nr].label))
+      print(f"WARNING! At a distance of {min_dist:8.3f} Angs")
     data.reshape(flex.grid(size[0], size[1], size[2]))
     if save_cube:
       plot_fft_map_cube(data, "PDF", size)
 
     if do_plot:
-      print("Grid Size: %4d x %4d x %4d" % (size[0], size[1], size[2]))
-      iso = -3.1415
-      if second is False:
-        iso = -0.05
+      print(f"Grid Size: {size[0]:4d} x {size[1]:4d} x {size[2]:4d}")
+      iso = -3.1415 if second else -0.05
       plot_map(data, iso, distance, min_v=stats.min, max_v=stats.max)
   except Exception as e:
     OV.DeleteBitmap("working")
     raise e
 
   OV.DeleteBitmap("working")
-  print("PDF Maps as implemented and tested by Florian Kleemiss and Daniel Tchon!")
+  print("PDF Maps implemented and tested by Florian Kleemiss and Daniel Tchon!")
 
 
 OV.registerFunction(PDF_map, False, "NoSpherA2")
