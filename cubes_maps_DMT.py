@@ -80,16 +80,17 @@ def Hjklm(jklm, diff, sigma):
   wk = sum(sigma[U_map[jklm[1]][i]] * diff[i] for i in range(3))
   wl = sum(sigma[U_map[jklm[2]][i]] * diff[i] for i in range(3))
   wm = sum(sigma[U_map[jklm[3]][i]] * diff[i] for i in range(3))
-  result = unique_permutations(jklm) * (wj * wk * wl * wm
-         - wj * wk * sigma[U_map[jklm[2]][jklm[3]]]
-         - wj * wl * sigma[U_map[jklm[1]][jklm[3]]]
-         - wj * wm * sigma[U_map[jklm[1]][jklm[2]]]
-         - wk * wl * sigma[U_map[jklm[3]][jklm[0]]]
-         - wk * wm * sigma[U_map[jklm[2]][jklm[0]]]
-         - wl * wm * sigma[U_map[jklm[0]][jklm[1]]]
-         + sigma[U_map[jklm[0]][jklm[1]]] * sigma[U_map[jklm[2]][jklm[3]]]
-         + sigma[U_map[jklm[0]][jklm[2]]] * sigma[U_map[jklm[1]][jklm[3]]]
-         + sigma[U_map[jklm[0]][jklm[3]]] * sigma[U_map[jklm[1]][jklm[2]]])
+  result = unique_permutations(jklm) * (
+          wj * wk * wl * wm
+          - wj * wk * sigma[U_map[jklm[2]][jklm[3]]]
+          - wj * wl * sigma[U_map[jklm[1]][jklm[3]]]
+          - wj * wm * sigma[U_map[jklm[1]][jklm[2]]]
+          - wk * wl * sigma[U_map[jklm[3]][jklm[0]]]
+          - wk * wm * sigma[U_map[jklm[2]][jklm[0]]]
+          - wl * wm * sigma[U_map[jklm[0]][jklm[1]]]
+          + sigma[U_map[jklm[0]][jklm[1]]] * sigma[U_map[jklm[2]][jklm[3]]]
+          + sigma[U_map[jklm[0]][jklm[2]]] * sigma[U_map[jklm[1]][jklm[3]]]
+          + sigma[U_map[jklm[0]][jklm[3]]] * sigma[U_map[jklm[1]][jklm[2]]])
   return result
 
 
@@ -99,7 +100,7 @@ def z_slice(z, x, y, vecs, posn, sigmas, pre, n_atoms, anharms, s, t, f, only_an
          x * vecs[2][0] + y * vecs[2][1] + z * vecs[2][2]]
   result = 0.0
   for a in range(n_atoms):
-    if only_anh == True and anharms[a] == None:
+    if only_anh is True and anharms[a] is None:
       continue
     # Skips NPD atoms
     if pre[a] < 0: 
@@ -117,15 +118,14 @@ def z_slice(z, x, y, vecs, posn, sigmas, pre, n_atoms, anharms, s, t, f, only_an
     P0 = pre[a] * np.exp(mhalfuTUu)
     P0[abs(P0) < 1E-30] = 0
     fact = float(s)
-    if anharms[a] != None:
-      if t == True:
+    if anharms[a] is not None:
+      if t is True:
         for i in range(10):
           fact += anharms[a][i] * Hjkl(Cs[i], diff, sigmas[a]) / 6
-      if f == True:
+      if f is True:
         for i in range(10, 25):
           fact += anharms[a][i] * Hjklm(Ds[i - 10], diff, sigmas[a]) / 24
-    atom_P = P0 * fact
-    result += atom_P
+    result += P0 * fact
   return result
 
 
@@ -143,9 +143,7 @@ def calculate_cubes():
     return
 
   wfn2fchk = OV.GetVar("Wfn2Fchk")
-  args = []
-
-  args.append(wfn2fchk)
+  args = [wfn2fchk]
   cpus = OV.GetParam('snum.NoSpherA2.ncpus')
   args.append("-cpus")
   args.append(cpus)
@@ -163,27 +161,27 @@ def calculate_cubes():
   ATOM = OV.GetParam('snum.NoSpherA2.Property_ATOM')
   DEF = OV.GetParam('snum.NoSpherA2.Property_DEF')
   all_MOs = OV.GetParam('snum.NoSpherA2.Property_all_MOs')
-  if Lap == True:
+  if Lap is True:
     args.append("-lap")
-  if Eli == True:
+  if Eli is True:
     args.append("-eli")
-  if Elf == True:
+  if Elf is True:
     args.append("-elf")
-  if RDG == True:
+  if RDG is True:
     args.append("-rdg")
-  if ESP == True:
+  if ESP is True:
     args.append("-esp")
-  if ATOM == True:
+  if ATOM is True:
     args.append("-HDEF")
-  if DEF == True:
+  if DEF is True:
     args.append("-def")
-  if MO == True:
+  if MO is True:
     args.append("-MO")
-    if all_MOs == True:
+    if all_MOs is True:
       args.append("all")
     else:
       args.append(str(int(OV.GetParam('snum.NoSpherA2.Property_MO_number'))-1))
-  if OV.GetParam('snum.NoSpherA2.wfn2fchk_debug') == True:
+  if OV.GetParam('snum.NoSpherA2.wfn2fchk_debug') is True:
     args.append("-v")
 
   radius = OV.GetParam('snum.NoSpherA2.map_radius')
@@ -207,51 +205,51 @@ def calculate_cubes():
   subprocess.Popen([pyl, os.path.join(p_path, "cube-launch.py")])
 
 
-OV.registerFunction(calculate_cubes,True,'NoSpherA2')
+OV.registerFunction(calculate_cubes, True, 'NoSpherA2')
 
 
 def get_map_types():
   name = OV.ModelSrc()
   folder = OV.FilePath()
-  list = ";Residual<-diff;Deformation<-fcfmc;2Fo-Fc<-tomc;Fobs<-fobs;Fcalc<-fcalc;"
+  list_ = ";Residual<-diff;Deformation<-fcfmc;2Fo-Fc<-tomc;Fobs<-fobs;Fcalc<-fcalc;"
   if os.path.isfile(os.path.join(folder,name+"_eli.cube")):
-    list += "ELI-D;"
+    list_ += "ELI-D;"
   if os.path.isfile(os.path.join(folder,name+"_lap.cube")):
-    list += "Laplacian;"
+    list_ += "Laplacian;"
   if os.path.isfile(os.path.join(folder,name+"_elf.cube")):
-    list += "ELF;"
+    list_ += "ELF;"
   if os.path.isfile(os.path.join(folder,name+"_esp.cube")):
-    list += "ESP;"
+    list_ += "ESP;"
   if os.path.isfile(os.path.join(folder,name+"_rdg.cube")):
-    list += "RDG;"
+    list_ += "RDG;"
   if os.path.isfile(os.path.join(folder,name+"_def.cube")):
-    list += "Stat. Def.;"
+    list_ += "Stat. Def.;"
   if os.path.isfile(os.path.join(folder,name+"_rdg.cube")) and os.path.isfile(os.path.join(folder,name+"_signed_rho.cube")):
-    list += "NCI;"
+    list_ += "NCI;"
   if os.path.isfile(os.path.join(folder,name+"_rho.cube")) and os.path.isfile(os.path.join(folder,name+"_esp.cube")):
-    list += "Rho + ESP;"
+    list_ += "Rho + ESP;"
   nmo = Wfn_Job.get_nmo()
   if nmo != -1:
     exists = False
     for i in range(int(nmo)+1):
       if os.path.isfile(os.path.join(folder,name+"_MO_"+str(i)+".cube")):
         exists = True
-    if exists == True:
-      list += "MO;"
+    if exists:
+      list_ += "MO;"
   ncen = Wfn_Job.get_ncen()
   if ncen != -1:
     exists = False
     for i in range(int(ncen)+1):
       if os.path.isfile(os.path.join(folder,name+"_HDEF_"+str(i)+".cube")):
         exists = True
-    if exists == True:
-      list += "HDEF;"
-  if list == "":
+    if exists:
+      list_ += "HDEF;"
+  if list_ == "":
     return "None;"
-  return list
+  return list_
 
 
-OV.registerFunction(get_map_types,True,'NoSpherA2')
+OV.registerFunction(get_map_types, True, 'NoSpherA2')
 
 
 def change_map():
@@ -310,7 +308,7 @@ def change_pointsize():
 OV.registerFunction(change_pointsize, True, 'NoSpherA2')
 
 
-def plot_cube(name,color_cube):
+def plot_cube(name, color_cube):
   if not os.path.isfile(name):
     print("Cube file does not exist!")
     return
@@ -365,8 +363,8 @@ def plot_cube(name,color_cube):
 
   cube = None
 
-  make_colorfull = (color_cube != None)
-  if make_colorfull == True:
+  make_colorfull = color_cube is not None
+  if make_colorfull:
     with open(color_cube) as cub:
       cube2 = cub.readlines()
 
@@ -547,8 +545,8 @@ def plot_cube_single(name):
   z_run = 0
   data = None
 
-  min = 100000
-  max = 0
+  min_ = 100000
+  max_ = 0
 
   for line in cube:
     run += 1
@@ -569,10 +567,10 @@ def plot_cube_single(name):
       values = line.split()
       for i in range(len(values)):
         data[x_run][y_run][z_run] = float(values[i])
-        if data[x_run][y_run][z_run] > max:
-          max = data[x_run][y_run][z_run]
-        if data[x_run][y_run][z_run] < min:
-          min = data[x_run][y_run][z_run]
+        if data[x_run][y_run][z_run] > max_:
+          max_ = data[x_run][y_run][z_run]
+        if data[x_run][y_run][z_run] < min_:
+          min_ = data[x_run][y_run][z_run]
         z_run += 1
         if z_run == z_size:
           y_run += 1
@@ -592,22 +590,22 @@ def plot_cube_single(name):
       for z in range(z_size):
         olex_xgrid.SetValue(x,y,z,data[x][y][z])
   data = None
-  OV.SetVar('map_min',0)
-  OV.SetVar('map_max',40)
-  OV.SetVar('map_slider_scale',100)
-  olex_xgrid.SetMinMax(min, max)
+  OV.SetVar('map_min', 0)
+  OV.SetVar('map_max', 40)
+  OV.SetVar('map_slider_scale', 100)
+  olex_xgrid.SetMinMax(min_, max_)
   olex_xgrid.SetVisible(True)
   olex_xgrid.InitSurface(True,1)
-  iso = float((abs(min)+abs(max))*2/3)
+  iso = float((abs(min_)+abs(max_))*2/3)
   olex_xgrid.SetSurfaceScale(iso)
-  OV.SetParam('snum.xgrid.scale',"{:.3f}".format(iso))
+  OV.SetParam('snum.xgrid.scale', "{:.3f}".format(iso))
 
 
-OV.registerFunction(plot_cube_single,True,'NoSpherA2')
+OV.registerFunction(plot_cube_single, True, 'NoSpherA2')
 
 
 def plot_map_cube(map_type,resolution):
-  olex.m('CalcFourier -fcf -%s -r=%s'%(map_type,resolution))
+  olex.m('CalcFourier -fcf -%s -r=%s' % (map_type, resolution))
   import math
   cctbx_adapter = OlexCctbxAdapter()
   xray_structure = cctbx_adapter.xray_structure()
@@ -660,7 +658,7 @@ def plot_map_cube(map_type,resolution):
           string += ("%15.7e"%value)
           if (z+1) % 6 == 0 and (z+1) != size[2]:
             string += '\n'
-        if (y != (size[1] - 1)):
+        if y != (size[1] - 1):
           string += '\n'
         cube.write(string)
       if x != (size[0] - 1):
@@ -709,13 +707,13 @@ def get_color(value):
   elif scale == "BGR":
     if x <= 0.5:
       h = 2*x
-      b = int(255*1-h)
-      g = int(255* h)
+      b = int(255*1-h)  # I don't think this works as intended? DMT220716
+      g = int(255 * h)
       r = 0
     elif x > 0.5:
       b = 0
       g = int(255 * (-2 * x + 2))
-      r = int(255 * ( 2 * x - 1))
+      r = int(255 * (+2 * x - 1))
   rgba = (a << 24) | (b << 16) | (g << 8) | r
   if value == "0.00101":
     print(rgba)
@@ -807,7 +805,7 @@ def plot_fft_map_cube(fft_map, map_name, size=[]):
 
   with open("%s_%s.cube" % (name,map_name), 'w') as cube:
     cube.write("Fourier synthesis map created by Olex2\n")
-    cube.write("Model name: %s\n"%name)
+    cube.write("Model name: %s\n" % name)
     # Origin of cube
     cube.write("%6d %12.8f %12.8f %12.8f\n"%(n_atoms,0.0,0.0,0.0))
     # need to write vectors!
@@ -828,7 +826,7 @@ def plot_fft_map_cube(fft_map, map_name, size=[]):
       for y in range(size[1]):
         string = ""
         for z in range(size[2]):
-          string += ("%15.7e"%values[(x*size[1]+y)*size[2]+z])
+          string += ("%15.7e" % values[(x*size[1]+y)*size[2]+z])
           if (z+1) % 6 == 0 and (z+1) != size[2]:
             string += '\n'
         if y != (size[1] - 1):
@@ -842,12 +840,12 @@ def plot_fft_map_cube(fft_map, map_name, size=[]):
   print("Saved Fourier map successfully")
 
 
-def residual_map(resolution=0.1,return_map=False,print_peaks=False):
+def residual_map(resolution=0.1, return_map=False, print_peaks=False):
   cctbx_adapter = OlexCctbxAdapter()
   xray_structure = cctbx_adapter.xray_structure()
   use_tsc = OV.GetParam('snum.NoSpherA2.use_aspherical')
   NoSpherA2_instance = NoSpherA2.get_NoSpherA2_instance()
-  if use_tsc == True:
+  if use_tsc:
     table_name = str(OV.GetParam("snum.NoSpherA2.file"))
     time = os.path.getmtime(table_name)
     if NoSpherA2_instance.reflection_date is None or time < NoSpherA2_instance.reflection_date:
@@ -883,9 +881,9 @@ def residual_map(resolution=0.1,return_map=False,print_peaks=False):
   print("Using %d reflections for Fourier synthesis"%f_diff.size())
   diff_map = f_diff.fft_map(symmetry_flags=sgtbx.search_symmetry_flags(use_space_group_symmetry=False),
                             resolution_factor=1,grid_step=float(resolution)).apply_volume_scaling()
-  if print_peaks == True or print_peaks == "True":
+  if print_peaks is True or print_peaks == "True":
     from cctbx import maptbx
-    max_peaks=10
+    max_peaks = 10
     peaks = diff_map.peak_search(
       parameters=maptbx.peak_search_parameters(
         peak_search_level=2,
@@ -917,7 +915,7 @@ def residual_map(resolution=0.1,return_map=False,print_peaks=False):
       olx.gl.Basis(basis)
       olx.Freeze(frozen)
       OV.Refresh()
-  if return_map == True:
+  if return_map is True:
     return diff_map
   plot_fft_map_cube(diff_map, "diff")
 
@@ -933,7 +931,7 @@ def U_to_sigma(U):
 
 
 def digest_boolinput(i):
-  if i == False or i == "False" or i == "0":
+  if i is False or i == "False" or i == "0":
     return False
   else:
     return True
@@ -980,7 +978,7 @@ def PDF_map(resolution=0.1, distance=1.0, second=True, third=True, fourth=True, 
       else:
         Us.append(atom.u_iso)
         adp_cart = adptbx.u_iso_as_u_cart(atom.u_iso)
-      if atom.anharmonic_adp == None:
+      if atom.anharmonic_adp is None:
         anharms.append(None)
       else:
         anharms.append(atom.anharmonic_adp.data())
@@ -1022,8 +1020,8 @@ def PDF_map(resolution=0.1, distance=1.0, second=True, third=True, fourth=True, 
 # determine piece of grid that really needs evaluation
     dist_bohr = distance / a2b
     for a in range(n_atoms):
-      if second == False or only_anh == True:
-        if anharms[a] == None:
+      if second is False or only_anh is True:
+        if anharms[a] is None:
           continue
       cart_minmax = [posn[a][0] - dist_bohr, posn[a][1] - dist_bohr, posn[a][2] - dist_bohr,
                      posn[a][0] + dist_bohr, posn[a][1] + dist_bohr, posn[a][2] + dist_bohr,
@@ -1075,7 +1073,7 @@ def PDF_map(resolution=0.1, distance=1.0, second=True, third=True, fourth=True, 
         olx.xf.EndUpdate()
         if OV.HasGUI():
           olx.Refresh()
-    if second == False:
+    if second is False:
       print("Multiplying grid values with 1000 to get on visible scale")
       data = data * 1000
     stats = data.min_max_mean()
@@ -1105,12 +1103,12 @@ def PDF_map(resolution=0.1, distance=1.0, second=True, third=True, fourth=True, 
     if do_plot:
       print("Grid Size: %4d x %4d x %4d" % (size[0], size[1], size[2]))
       iso = -3.1415
-      if second == False:
+      if second is False:
         iso = -0.05
       plot_map(data, iso, distance, min_v=stats.min, max_v=stats.max)
   except Exception as e:
     OV.DeleteBitmap("working")
-    raise(e)
+    raise e
 
   OV.DeleteBitmap("working")
   print("PDF Maps as implemented and tested by Florian Kleemiss and Daniel Tchon!")
@@ -1122,7 +1120,7 @@ OV.registerFunction(PDF_map, False, "NoSpherA2")
 def tomc_map(resolution=0.1, return_map=False, use_f000=False):
   cctbx_adapter = OlexCctbxAdapter()
   use_tsc = OV.GetParam('snum.NoSpherA2.use_aspherical')
-  if use_tsc == True:
+  if use_tsc is True:
     table_name = str(OV.GetParam("snum.NoSpherA2.file"))
     time = os.path.getmtime(table_name)
     NoSpherA2_instance = NoSpherA2.get_NoSpherA2_instance()
@@ -1164,7 +1162,7 @@ def tomc_map(resolution=0.1, return_map=False, use_f000=False):
   else:
     tomc_map = f_diff.fft_map(symmetry_flags=sgtbx.search_symmetry_flags(use_space_group_symmetry=False),
                               resolution_factor=1, grid_step=float(resolution)).apply_volume_scaling()
-  if return_map == True:
+  if return_map is True:
     return tomc_map
   plot_fft_map_cube(tomc_map, "tomc")
 
@@ -1174,7 +1172,7 @@ OV.registerFunction(tomc_map, False, "NoSpherA2")
 
 def deformation_map(resolution=0.1, return_map=False):
   use_tsc = OV.GetParam('snum.NoSpherA2.use_aspherical')
-  if use_tsc == False:
+  if use_tsc is False:
     print("ERROR! Deformation is only available when using a .tsc file!")
     return
   cctbx_adapter = OlexCctbxAdapter()
@@ -1194,9 +1192,9 @@ def deformation_map(resolution=0.1, return_map=False):
   f_diff = f_diff.expand_to_p1()
   def_map = f_diff.fft_map(symmetry_flags=sgtbx.search_symmetry_flags(use_space_group_symmetry=False),
                            resolution_factor=1,grid_step=float(resolution)).apply_volume_scaling()
-  if return_map == True:
+  if return_map is True:
     return def_map
-  plot_fft_map_cube(def_map,"deform")
+  plot_fft_map_cube(def_map, "deform")
 
 
 OV.registerFunction(deformation_map, False, "NoSpherA2")
@@ -1205,7 +1203,7 @@ OV.registerFunction(deformation_map, False, "NoSpherA2")
 def obs_map(resolution=0.1, return_map=False, use_f000=False):
   cctbx_adapter = OlexCctbxAdapter()
   use_tsc = OV.GetParam('snum.NoSpherA2.use_aspherical')
-  if use_tsc == True:
+  if use_tsc is True:
     table_name = str(OV.GetParam("snum.NoSpherA2.file"))
     time = os.path.getmtime(table_name)
     NoSpherA2_instance = NoSpherA2.get_NoSpherA2_instance()
@@ -1224,7 +1222,7 @@ def obs_map(resolution=0.1, return_map=False, use_f000=False):
   k = math.sqrt(OV.GetOSF())
   f_obs.apply_scaling(factor=1./k)
   f_obs = f_obs.phase_transfer(f_calc)
-  if use_f000 == True or use_f000 == "True":
+  if use_f000 is True or use_f000 == "True":
     f000 = float(olx.xf.GetF000())
     obs_map = f_obs.fft_map(symmetry_flags=sgtbx.search_symmetry_flags(use_space_group_symmetry=False),
                               resolution_factor=1,
@@ -1233,7 +1231,7 @@ def obs_map(resolution=0.1, return_map=False, use_f000=False):
   else:
     obs_map = f_obs.fft_map(symmetry_flags=sgtbx.search_symmetry_flags(use_space_group_symmetry=False),
                               resolution_factor=1,grid_step=float(resolution)).apply_volume_scaling()
-  if return_map==True:
+  if return_map is True:
     return obs_map
   plot_fft_map_cube(obs_map,"obs")
 
@@ -1241,10 +1239,10 @@ def obs_map(resolution=0.1, return_map=False, use_f000=False):
 OV.registerFunction(obs_map, False, "NoSpherA2")
 
 
-def calc_map(resolution=0.1,return_map=False, use_f000=False):
+def calc_map(resolution=0.1, return_map=False, use_f000=False):
   cctbx_adapter = OlexCctbxAdapter()
   use_tsc = OV.GetParam('snum.NoSpherA2.use_aspherical')
-  if use_tsc == True:
+  if use_tsc is True:
     table_name = str(OV.GetParam("snum.NoSpherA2.file"))
     time = os.path.getmtime(table_name)
     NoSpherA2_instance = NoSpherA2.get_NoSpherA2_instance()
@@ -1266,7 +1264,7 @@ def calc_map(resolution=0.1,return_map=False, use_f000=False):
   else:
     calc_map = f_calc.fft_map(symmetry_flags=sgtbx.search_symmetry_flags(use_space_group_symmetry=False),
                               resolution_factor=1, grid_step=float(resolution)).apply_volume_scaling()
-  if return_map==True:
+  if return_map is True:
     return calc_map
   plot_fft_map_cube(calc_map,"calc")
 
