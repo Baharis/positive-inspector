@@ -5,7 +5,7 @@ import olex_core
 import math
 import numpy as np
 from scipy import linalg
-from typing import Sequence
+from typing import List, Sequence
 
 from olexFunctions import OV
 from cctbx_olex_adapter import OlexCctbxAdapter
@@ -29,33 +29,6 @@ Cs Ba La Ce Pr Nd Pm Sm Eu Gd Tb Dy Ho Er Tm Yb Lu Hf Ta  W Re Os Ir Pt Au Hg Tl
 Fr Ra Ac Th Pa U  Np Pu Am Cm Bk Cf Es Fm Md No Lr""".split()
 
 
-Cs = [[0, 0, 0],
-      [0, 0, 1],
-      [0, 0, 2],
-      [0, 1, 1],
-      [0, 1, 2],
-      [0, 2, 2],
-      [1, 1, 1],
-      [1, 1, 2],
-      [1, 2, 2],
-      [2, 2, 2]]
-
-Ds = [[0, 0, 0, 0],
-      [0, 0, 0, 1],
-      [0, 0, 0, 2],
-      [0, 0, 1, 1],
-      [0, 0, 1, 2],
-      [0, 0, 2, 2],
-      [0, 1, 1, 1],
-      [0, 1, 1, 2],
-      [0, 1, 2, 2],
-      [0, 2, 2, 2],
-      [1, 1, 1, 1],
-      [1, 1, 1, 2],
-      [1, 1, 2, 2],
-      [1, 2, 2, 2],
-      [2, 2, 2, 2]]
-
 U_map = [[0, 3, 4],
          [3, 1, 5],
          [4, 5, 2]]
@@ -64,26 +37,39 @@ a2b = 0.529177210903
 
 
 class HermitePolynomial:
+  THIRD_ORDER_COEFFICIENTS = [[0, 0, 0], [0, 0, 1], [0, 0, 2], [0, 1, 1],
+                              [0, 1, 2], [0, 2, 2], [1, 1, 1], [1, 1, 2],
+                              [1, 2, 2], [2, 2, 2]]
+  FOURTH_ORDER_COEFFICIENTS = [[0, 0, 0, 0], [0, 0, 0, 1], [0, 0, 0, 2],
+                               [0, 0, 1, 1], [0, 0, 1, 2], [0, 0, 2, 2],
+                               [0, 1, 1, 1], [0, 1, 1, 2], [0, 1, 2, 2],
+                               [0, 2, 2, 2], [1, 1, 1, 1], [1, 1, 1, 2],
+                               [1, 1, 2, 2], [1, 2, 2, 2], [2, 2, 2, 2]]
+
   def __init__(self, coefficients: Sequence[int]):
     self.coefficients = coefficients
     self.order = len(coefficients)
-
-  def __call__(self, u: np.ndarray, si_inv: np.ndarray) -> np.ndarray:
     if self.order is 3:
-      return self._call_for_order_3(u, si_inv)
+      self._call = self._call_for_order_3
     elif self.order is 4:
-      return self._call_for_order_4(u, si_inv)
+      self._call = self._call_for_order_4
     else:
       raise NotImplementedError(f'Order {self.order} is not implemented')
 
+  def __call__(self, u: np.ndarray, si_inv: np.ndarray) -> np.ndarray:
+    return self._call(u, si_inv)
+
+  def _call(self, u: np.ndarray, si_inv: np.ndarray) -> np.ndarray:
+    """This method is abstract, to be overwritten by `self._call_for_order_*`"""
+
   def _call_for_order_3(self, u: np.ndarray, si_inv: np.ndarray) -> np.ndarray:
-    wj, wk, wl = (self.w(c, u, si_inv) for c in self.coefficients)
+    wj, wk, wl = self.w(u, si_inv)
     r = wj * wl * wk - wj * si_inv[self.c[1], self.c[2]]\
         - wk * si_inv[self.c[2], self.c[0]] - wl * si_inv[self.c[0], self.c[1]]
     return r * self.unique_permutations
 
   def _call_for_order_4(self, u: np.ndarray, si_inv: np.ndarray) -> np.ndarray:
-    wj, wk, wl, wm = (self.w(c, u, si_inv) for c in self.coefficients)
+    wj, wk, wl, wm = self.w(u, si_inv)
     r = (wj * wk * wl * wm
          - wj * wk * si_inv[self.c[2], self.c[3]]
          - wj * wl * si_inv[self.c[1], self.c[3]]
@@ -107,9 +93,14 @@ class HermitePolynomial:
     v = self.coefficients
     return f(len(v)) / np.prod([f(v.count(i)) for i in range(max(v) + 1)])
 
-  @staticmethod
-  def w(coefficient: int, u: np.ndarray, si_inv: np.ndarray):
-    return sum(si_inv[coefficient - 1, i] * u[:, i] for i in range(3))
+  def w(self, u: np.ndarray, si_inv: np.ndarray) -> List[np.ndarray]:
+    return [sum(si_inv[c, i] * u[:, i] for i in range(3)) for c in self.c]
+
+
+hermite_polynomials_of_3rd_order = [HermitePolynomial(c) for c in
+                                    HermitePolynomial.THIRD_ORDER_COEFFICIENTS]
+hermite_polynomials_of_4th_order = [HermitePolynomial(c) for c in
+                                    HermitePolynomial.FOURTH_ORDER_COEFFICIENTS]
 
 
 def z_slice(z, x, y, vecs, posn, sigmas, pre, n_atoms, anharms, s, t, f, only_anh):
@@ -143,11 +134,11 @@ def z_slice(z, x, y, vecs, posn, sigmas, pre, n_atoms, anharms, s, t, f, only_an
     if anharms[a] is not None:
       if t is True:
         for i in range(10):
-          hermite = HermitePolynomial(Cs[i])
+          hermite = hermite_polynomials_of_3rd_order[i]
           fact += anharms[a][i] * hermite(u, si_inv) / 6
       if f is True:
         for i in range(10, 25):
-          hermite = HermitePolynomial(Ds[i - 10])
+          hermite = hermite_polynomials_of_4th_order[i - 10]
           fact += anharms[a][i] * hermite(u, si_inv) / 24
     result += P0 * fact
   return result
