@@ -940,6 +940,8 @@ OV.registerFunction(residual_map, False, "NoSpherA2")
 
 def det(U):
   return U[0] * U[1] * U[2] + U[3] * U[4] * U[5] * 2 - U[1] * U[4] * U[4] - U[3] * U[2] * U[3] - U[5] * U[0] * U[5]
+
+
 def U_to_sigma(U):
   U_loc = linalg.inv(np.array([U[0],U[3],U[4],U[3],U[1],U[5],U[4],U[5],U[2]]).reshape(3,3))
   return [U_loc[0][0],U_loc[1][1],U_loc[2][2],U_loc[0][1],U_loc[0][2],U_loc[1][2]]
@@ -995,7 +997,7 @@ def PDF_map(resolution=0.1, distance=1.0, second=True, third=True, fourth=True, 
       sigmas.append(U_to_sigma(adp_cart))
       pre_temp = det(sigmas[-1])
       if pre_temp < 0:
-        print("Skipping NPD Atom %s"%atom.label)
+        print("Skipping NPD Atom %s" % atom.label)
         pre_temp = -math.sqrt(-pre_temp) / fixed
       else:
         pre_temp = math.sqrt(pre_temp) / fixed
@@ -1074,14 +1076,6 @@ def PDF_map(resolution=0.1, distance=1.0, second=True, third=True, fourth=True, 
           if z_loc < 0:
             z_loc += size[2]
           data[start + (z_loc % size[2])] += val
-      num = int((x-limits[0][0]) / x_size * 100)
-      if num > last_percentage:
-        while last_percentage < num:
-          last_percentage += step
-        print("{:4d}%".format(num))
-        olx.xf.EndUpdate()
-        if OV.HasGUI():
-          olx.Refresh()
     if second is False:
       print("Multiplying grid values with 1000 to get on visible scale")
       data = data * 1000
