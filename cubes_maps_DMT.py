@@ -1019,36 +1019,22 @@ def PDF_map(resolution=0.1, distance=1.0, second=True, third=True, fourth=True, 
       # Skips NPD atoms
       if pre[a] < 0:
         continue
-      diff = [b2a(pos[0] - posn[a][0]),
-              b2a(pos[1] - posn[a][1]),
-              b2a(pos[2] - posn[a][2])]
-      mhalfuTUu = np.fmin(-0.5 * (diff[0] * (diff[0] * sigmas_inv[a][0]
-                                             + diff[1] * sigmas_inv[a][3]
-                                             + diff[2] * sigmas_inv[a][4])
-                                  + diff[1] * (diff[0] * sigmas_inv[a][3]
-                                               + diff[1] * sigmas_inv[a][1]
-                                               + diff[2] * sigmas_inv[a][5])
-                                  + diff[2] * (diff[0] * sigmas_inv[a][4]
-                                               + diff[1] * sigmas_inv[a][5]
-                                               + diff[2] * sigmas_inv[a][2])),
-                          np.full(zi.size, 0))
-      P0 = pre[a] * np.exp(mhalfuTUu)
-      P0[abs(P0) < 1E-30] = 0
+      u = b2a(np.array([pos[i] - posn[a][i] for i in range(3)])).T
+      mhalfuTUu = np.clip(-0.5 * np.sum(u * u @ sigmas_inv[a], axis=1),
+                          a_min=None, a_max=0)
+      p0 = pre[a] * np.exp(mhalfuTUu)
+      p0[abs(p0) < 1E-30] = 0
       fact = float(second)
-      u = np.array(diff).T
-      si_inv = np.array([(sigmas_inv[a][0], sigmas_inv[a][3], sigmas_inv[a][4]),
-                         (sigmas_inv[a][3], sigmas_inv[a][1], sigmas_inv[a][5]),
-                         (sigmas_inv[a][4], sigmas_inv[a][5], sigmas_inv[a][2])])
       if anharms[a] is not None:
         if third is True:
           for i in range(10):
             hermite = hermite_polynomials_of_3rd_order[i]
-            fact += anharms[a][i] * hermite(u, si_inv) / 6
+            fact += anharms[a][i] * hermite(u, sigmas_inv[a]) / 6
         if fourth is True:
           for i in range(10, 25):
             hermite = hermite_polynomials_of_4th_order[i - 10]
-            fact += anharms[a][i] * hermite(u, si_inv) / 24
-      result += P0 * fact
+            fact += anharms[a][i] * hermite(u, sigmas_inv[a]) / 24
+      result += p0 * fact
 
     result_matrix = result.reshape((xi_max - xi_min, yi_max - yi_min, zi_max - zi_min))
     data_matrix = np.zeros(shape=size)
