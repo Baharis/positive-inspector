@@ -1057,9 +1057,10 @@ def PDF_map(resolution=0.1, distance=1.0, second=True, third=True, fourth=True, 
     for i in range(3):
       limits[i][0] = math.floor(limits[i][0])
       limits[i][1] = math.ceil(limits[i][1])
-    step = 5
-    last_percentage = step - 1
-    x_size = limits[0][1] - limits[0][0]
+    grid_indices_x = range(limits[0][0], limits[0][1])
+    grid_indices_y = range(limits[1][0], limits[1][1])
+    grid_indices_z = range(limits[2][0], limits[2][1])
+
     for x in range(limits[0][0], limits[0][1]):
       for y in range(limits[1][0], limits[1][1]):
         start = ((x % size[0]) * size[1] + (y % size[1])) * size[2]
@@ -1068,6 +1069,7 @@ def PDF_map(resolution=0.1, distance=1.0, second=True, third=True, fourth=True, 
         for i, val in enumerate(res):
           z = zs[i]
           data[start + (z % size[2])] += val
+
     if second is False:
       print("Multiplying grid values with 1000 to get on visible scale")
       data = data * 1000
