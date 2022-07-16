@@ -1027,11 +1027,11 @@ def PDF_map(resolution=0.1, distance=1.0, second=True, third=True, fourth=True, 
         if third is True:
           for i in range(10):
             hermite = hermite_polynomials_of_3rd_order[i]
-            fact += anharms[a][i] * hermite(u, sigmas_inv[a]) / 6
+            fact += anharms[a][i] * hermite(u, sigmas_inv[a]) / 6 / 8  # discuss with Florian?
         if fourth is True:
           for i in range(10, 25):
             hermite = hermite_polynomials_of_4th_order[i - 10]
-            fact += anharms[a][i] * hermite(u, sigmas_inv[a]) / 24
+            fact += anharms[a][i] * hermite(u, sigmas_inv[a]) / 24 / 16  # discuss with Florian?
       result += p0 * fact
 
     result_matrix = result.reshape((xi_max - xi_min, yi_max - yi_min, zi_max - zi_min))
