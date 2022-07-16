@@ -771,7 +771,7 @@ def plot_fft_map_cube(fft_map, map_name, size=[]):
           (cm[3] / (size[0]), cm[4] / (size[1]), cm[5] / (size[2])),
           (cm[6] / (size[0]), cm[7] / (size[1]), cm[8] / (size[2]))]
 
-  print("start writing a %4d x %4d x %4d cube"%(size[0], size[1], size[2]))
+  print("start writing a %4d x %4d x %4d cube" % (size[0], size[1], size[2]))
 
   with open("%s_%s.cube" % (name, map_name), 'w') as cube:
     cube.write("Fourier synthesis map created by Olex2\n")
@@ -1063,7 +1063,7 @@ def PDF_map(resolution=0.1, distance=1.0, second=True, third=True, fourth=True, 
           min_dist = dist
           atom_nr = i
       print("WARNING! Significant negative PDF for Atom:", str(atoms[atom_nr].label))
-      print(f"WARNING! At a distance of {min_dist:8.3f} Angs")
+      print(f"WARNING! At a distance of {min_dist:8.3f} Angstrom")
     data.reshape(flex.grid(size[0], size[1], size[2]))
     if save_cube:
       plot_fft_map_cube(data, "PDF", size)
