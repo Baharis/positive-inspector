@@ -924,7 +924,7 @@ def PDF_map(resolution=0.1, distance=1.0, second=True, third=True, fourth=True, 
     fixed = math.pow(2 * math.pi, 1.5)
     Us = []
     Us_cart = []
-    sigmas = []
+    sigmas_inv = []
     pre = []
     posn = []
     anharms = []
@@ -944,8 +944,8 @@ def PDF_map(resolution=0.1, distance=1.0, second=True, third=True, fourth=True, 
       else:
         anharms.append(atom.anharmonic_adp.data())
       Us_cart.append(adp_cart)
-      sigmas.append(U_to_sigma(adp_cart))
-      pre_temp = det(sigmas[-1])
+      sigmas_inv.append(U_to_sigma(adp_cart))
+      pre_temp = det(sigmas_inv[-1])
       if pre_temp < 0:
         print("Skipping NPD Atom", atom.label)
         pre_temp = -math.sqrt(-pre_temp) / fixed
@@ -1027,23 +1027,23 @@ def PDF_map(resolution=0.1, distance=1.0, second=True, third=True, fourth=True, 
       diff = [b2a(pos[0] - posn[a][0]),
               b2a(pos[1] - posn[a][1]),
               b2a(pos[2] - posn[a][2])]
-      mhalfuTUu = np.fmin(-0.5 * (diff[0] * (diff[0] * sigmas[a][0]
-                                             + diff[1] * sigmas[a][3]
-                                             + diff[2] * sigmas[a][4])
-                                  + diff[1] * (diff[0] * sigmas[a][3]
-                                               + diff[1] * sigmas[a][1]
-                                               + diff[2] * sigmas[a][5])
-                                  + diff[2] * (diff[0] * sigmas[a][4]
-                                               + diff[1] * sigmas[a][5]
-                                               + diff[2] * sigmas[a][2])),
+      mhalfuTUu = np.fmin(-0.5 * (diff[0] * (diff[0] * sigmas_inv[a][0]
+                                             + diff[1] * sigmas_inv[a][3]
+                                             + diff[2] * sigmas_inv[a][4])
+                                  + diff[1] * (diff[0] * sigmas_inv[a][3]
+                                               + diff[1] * sigmas_inv[a][1]
+                                               + diff[2] * sigmas_inv[a][5])
+                                  + diff[2] * (diff[0] * sigmas_inv[a][4]
+                                               + diff[1] * sigmas_inv[a][5]
+                                               + diff[2] * sigmas_inv[a][2])),
                           np.full(zi.size, 0))
       P0 = pre[a] * np.exp(mhalfuTUu)
       P0[abs(P0) < 1E-30] = 0
       fact = float(second)
       u = np.array(diff).T
-      si_inv = np.array([(sigmas[a][0], sigmas[a][3], sigmas[a][4]),
-                         (sigmas[a][3], sigmas[a][1], sigmas[a][5]),
-                         (sigmas[a][4], sigmas[a][5], sigmas[a][2])])
+      si_inv = np.array([(sigmas_inv[a][0], sigmas_inv[a][3], sigmas_inv[a][4]),
+                         (sigmas_inv[a][3], sigmas_inv[a][1], sigmas_inv[a][5]),
+                         (sigmas_inv[a][4], sigmas_inv[a][5], sigmas_inv[a][2])])
       if anharms[a] is not None:
         if third is True:
           for i in range(10):
