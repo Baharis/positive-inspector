@@ -893,13 +893,11 @@ def residual_map(resolution=0.1, return_map=False, print_peaks=False):
 OV.registerFunction(residual_map, False, "NoSpherA2")
 
 
-def det(U):
-  return U[0] * U[1] * U[2] + U[3] * U[4] * U[5] * 2 - U[1] * U[4] * U[4] - U[3] * U[2] * U[3] - U[5] * U[0] * U[5]
-
-
-def U_to_sigma(U):
-  U_loc = linalg.inv(np.array([U[0], U[3], U[4], U[3], U[1], U[5], U[4], U[5], U[2]]).reshape(3, 3))
-  return [U_loc[0][0], U_loc[1][1], U_loc[2][2], U_loc[0][1], U_loc[0][2], U_loc[1][2]]
+def adp_list_to_sigma_inv(adp: Sequence) -> np.ndarray:
+  adp_array = np.array([(adp[0], adp[3], adp[4]),
+                        (adp[3], adp[1], adp[5]),
+                        (adp[4], adp[5], adp[2])], dtype=np.float)
+  return linalg.inv(adp_array)
 
 
 def digest_boolinput(i: Union[bool, str]) -> bool:
@@ -941,8 +939,8 @@ def PDF_map(resolution=0.1, distance=1.0, second=True, third=True, fourth=True, 
       else:
         anharms.append(atom.anharmonic_adp.data())
       Us_cart.append(adp_cart)
-      sigmas_inv.append(U_to_sigma(adp_cart))
-      pre_temp = det(sigmas_inv[-1])
+      sigmas_inv.append(adp_list_to_sigma_inv(adp_cart))
+      pre_temp = linalg.det(sigmas_inv[-1])
       if pre_temp < 0:
         print("Skipping NPD Atom", atom.label)
         pre_temp = -math.sqrt(-pre_temp) / fixed
