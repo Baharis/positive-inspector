@@ -103,7 +103,7 @@ hermite_polynomials_of_4th_order = [HermitePolynomial(c) for c in
                                     HermitePolynomial.FOURTH_ORDER_COEFFICIENTS]
 
 
-def z_slice(z, x, y, vecs, posn, sigmas, pre, n_atoms, anharms, s, t, f):
+def z_slice(z, x, y, vecs, posn, sigmas, pre, n_atoms, anharms, s, t, f) -> np.ndarray:
   pos = [x * vecs[0][0] + y * vecs[0][1] + z * vecs[0][2],
          x * vecs[1][0] + y * vecs[1][1] + z * vecs[1][2],
          x * vecs[2][0] + y * vecs[2][1] + z * vecs[2][2]]
@@ -1062,20 +1062,12 @@ def PDF_map(resolution=0.1, distance=1.0, second=True, third=True, fourth=True, 
     x_size = limits[0][1] - limits[0][0]
     for x in range(limits[0][0], limits[0][1]):
       for y in range(limits[1][0], limits[1][1]):
-        x_loc = x
-        if x < 0:
-          x_loc += size[0]
-        y_loc = y
-        if y < 0:
-          y_loc += size[1]
-        start = ((x_loc % size[0]) * size[1] + (y_loc % size[1])) * size[2]
+        start = ((x % size[0]) * size[1] + (y % size[1])) * size[2]
         zs = np.array(range(limits[2][0], limits[2][1]))
         res = z_slice(zs, x, y, vecs, posn, sigmas, pre, n_atoms, anharms, bool(second), bool(third), bool(fourth))
         for i, val in enumerate(res):
-          z_loc = zs[i]
-          if z_loc < 0:
-            z_loc += size[2]
-          data[start + (z_loc % size[2])] += val
+          z = zs[i]
+          data[start + (z % size[2])] += val
     if second is False:
       print("Multiplying grid values with 1000 to get on visible scale")
       data = data * 1000
