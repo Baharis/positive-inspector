@@ -5,6 +5,7 @@ import olex_core
 import math
 import numpy as np
 from scipy import linalg
+from typing import Sequence
 
 from olexFunctions import OV
 from cctbx_olex_adapter import OlexCctbxAdapter
@@ -65,6 +66,55 @@ a2b = 0.529177210903
 def unique_permutations(v):
   f = np.math.factorial
   return f(len(v)) / np.prod([f(v.count(i)) for i in range(max(v) + 1)])
+
+
+class HermitePolynomial:
+  def __init__(self, coefficients: Sequence[int]):
+    self.coefficients = coefficients
+    self.order = len(coefficients)
+
+  def __call__(self, u: np.ndarray, si_inv: np.ndarray) -> np.ndarray:
+    if self.order is 3:
+      return self._call_for_order_3(u, si_inv)
+    elif self.order is 4:
+      return self._call_for_order_4(u, si_inv)
+    else:
+      raise NotImplementedError(f'Order {self.order} is not implemented')
+
+  def _call_for_order_3(self, u: np.ndarray, si_inv: np.ndarray) -> np.ndarray:
+    wj, wk, wl = (self.w(c, u, si_inv) for c in self.coefficients)
+    r = wj * wl * wk - wj * si_inv[self.c[1], self.c[2]]\
+        - wk * si_inv[self.c[2], self.c[0]] - wl * si_inv[self.c[0], self.c[1]]
+    return r * self.unique_permutations
+
+  def _call_for_order_4(self, u: np.ndarray, si_inv: np.ndarray) -> np.ndarray:
+    wj, wk, wl, wm = (self.w(c, u, si_inv) for c in self.coefficients)
+    r = (wj * wk * wl * wm
+         - wj * wk * si_inv[self.c[2], self.c[3]]
+         - wj * wl * si_inv[self.c[1], self.c[3]]
+         - wj * wm * si_inv[self.c[1], self.c[2]]
+         - wk * wl * si_inv[self.c[3], self.c[0]]
+         - wk * wm * si_inv[self.c[2], self.c[0]]
+         - wl * wm * si_inv[self.c[0], self.c[1]]
+         + si_inv[self.c[0], self.c[1]] * si_inv[self.c[2], self.c[3]]
+         + si_inv[self.c[0], self.c[2]] * si_inv[self.c[1], self.c[3]]
+         + si_inv[self.c[0], self.c[3]] * si_inv[self.c[1], self.c[2]])
+    return r * self.unique_permutations
+
+  @property
+  def c(self) -> Sequence[int]:
+    """Return coefficients in programming notation, eg. C112 -> [0, 0, 1]"""
+    return [c - 1 for c in self.coefficients]
+
+  @property
+  def unique_permutations(self):
+    f = np.math.factorial
+    v = self.coefficients
+    return f(len(v)) / np.prod([f(v.count(i)) for i in range(max(v) + 1)])
+
+  @staticmethod
+  def w(coefficient: int, u: np.ndarray, si_inv: np.ndarray):
+    return sum(si_inv[coefficient - 1, i] * u[:, i] for i in range(3))
 
 
 def Hjkl(jkl, diff, sigma):
