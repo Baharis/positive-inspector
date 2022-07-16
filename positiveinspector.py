@@ -6,6 +6,7 @@ import pathlib
 import re
 import subprocess
 import tempfile
+import time
 from collections import UserList, UserDict
 from typing import Iterable, Union
 from unittest.mock import Mock
@@ -737,6 +738,7 @@ def _parse_test_pdf_map_args(args) -> dict:
 
 
 def _run_test_pdf_map(setting_list: SettingList) -> None:
+    test_start_time = time.perf_counter()
     results = ['U', ] * len(setting_list)
     print(f'Testing {len(results)} individual maps against each other')
     for i, s in enumerate(setting_list):
@@ -757,6 +759,9 @@ def _run_test_pdf_map(setting_list: SettingList) -> None:
               f'{results.count("T"):7} agree, {results.count("F"):7} disagree, '
               f'{results.count("M"):7} mismatched. '
               f'(rtol={PDFGrid.RTOL}, atol={PDFGrid.ATOL})')
+    test_end_time = time.perf_counter()
+    test_time = test_end_time - test_start_time
+    print(f'A total of {len(setting_list)} tests took {test_time} seconds.')
 
 
 def test_pdf_map_where(*args) -> None:

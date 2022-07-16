@@ -136,10 +136,10 @@ def z_slice(z, x, y, vecs, posn, sigmas, pre, n_atoms, anharms, s, t, f, only_an
     P0 = pre[a] * np.exp(mhalfuTUu)
     P0[abs(P0) < 1E-30] = 0
     fact = float(s)
-    u = np.array(diff)
-    si_inv = np.array([(sigmas[0], sigmas[3], sigmas[4]),
-                       (sigmas[3], sigmas[1], sigmas[5]),
-                       (sigmas[4], sigmas[5], sigmas[2])])
+    u = np.array(diff).T
+    si_inv = np.array([(sigmas[a][0], sigmas[a][3], sigmas[a][4]),
+                       (sigmas[a][3], sigmas[a][1], sigmas[a][5]),
+                       (sigmas[a][4], sigmas[a][5], sigmas[a][2])])
     if anharms[a] is not None:
       if t is True:
         for i in range(10):
