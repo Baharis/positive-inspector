@@ -36,15 +36,12 @@ U_map = [[0, 3, 4],
 
 def a2b(value: Union[int, float, np.ndarray] = 1) -> Union[float, np.ndarray]:
   """Convert `value` in Angstrom to Bohr"""
-  return value * 1.8897259886
+  return value * 1.889726124626
 
 
 def b2a(value: Union[int, float, np.ndarray] = 1) -> Union[float, np.ndarray]:
   """Convert `value` in Bohr to Angstrom"""
-  return value * 0.529177249
-
-
-a2b = 0.529177210903
+  return value * 0.529177210903
 
 
 class HermitePolynomial:
@@ -589,7 +586,7 @@ def plot_cube_single(name):
 OV.registerFunction(plot_cube_single, True, 'NoSpherA2')
 
 
-def plot_map_cube(map_type,resolution):
+def plot_map_cube(map_type, resolution):
   olex.m('CalcFourier -fcf -%s -r=%s' % (map_type, resolution))
   import math
   cctbx_adapter = OlexCctbxAdapter()
@@ -601,14 +598,11 @@ def plot_map_cube(map_type,resolution):
 
   n_atoms = int(olx.xf.au.GetAtomCount())
   positions = [[float(0.0) for k in range(3)] for l in range(n_atoms)]
-  cm = list(uc.orthogonalization_matrix())
-  for i in range(9):
-    cm[i] /= a2b
-  cm = tuple(cm)  
+  cm = a2b(np.array(uc.orthogonalization_matrix()))
   for a in range(n_atoms):
     coord = olx.xf.au.GetAtomCrd(a)
     pos = olx.xf.au.Orthogonalise(coord).split(',')
-    positions[a] = [float(pos[0]) / a2b, float(pos[1]) / a2b, float(pos[2]) / a2b]
+    positions[a] = [a2b(float(pos[0])), a2b(float(pos[1])), a2b(float(pos[2]))]
 
   vecs = [(cm[0] / (size[0] - 1), cm[1] / (size[0] - 1), cm[2] / (size[0] - 1)),
           (cm[3] / (size[1] - 1), cm[4] / (size[1] - 1), cm[5] / (size[1] - 1)),
@@ -773,13 +767,10 @@ def plot_fft_map_cube(fft_map, map_name, size=[]):
 
   n_atoms = int(olx.xf.au.GetAtomCount())
   positions = [[float(0.0) for k in range(3)] for l in range(n_atoms)]
-  cm = list(uc.orthogonalization_matrix())
-  for i in range(9):
-    cm[i] /= a2b
-  cm = tuple(cm)  
+  cm = a2b(np.array(uc.orthogonalization_matrix()))
   for a in range(n_atoms):
       pos = olx.xf.au.Orthogonalise(olx.xf.au.GetAtomCrd(a)).split(',')
-      positions[a] = [float(pos[0]) / a2b, float(pos[1]) / a2b, float(pos[2]) / a2b]
+      positions[a] = [a2b(float(pos[0])), a2b(float(pos[1])), a2b(float(pos[2]))]
 
   vecs = [(cm[0] / (size[0]), cm[1] / (size[1]), cm[2] / (size[2])),
           (cm[3] / (size[0]), cm[4] / (size[1]), cm[5] / (size[2])),
@@ -946,11 +937,8 @@ def PDF_map(resolution=0.1, distance=1.0, second=True, third=True, fourth=True, 
     posn = []
     anharms = []
     for atom in cctbx_adapter.xray_structure()._scatterers:
-      coord = np.array(uc.orthogonalize(atom.site))
-      coord[0] /= a2b
-      coord[1] /= a2b
-      coord[2] /= a2b
-      posn.append(coord)
+      coordinates = np.array(uc.orthogonalize(atom.site))
+      posn.append(a2b(coordinates))
       adp = atom.u_star
       if adp != (-1., -1., -1., -1., -1., -1.):
         Us.append(atom.u_star)
@@ -976,10 +964,8 @@ def PDF_map(resolution=0.1, distance=1.0, second=True, third=True, fourth=True, 
     size = list(gridding.n_real())
 
     n_atoms = len(posn)
-    cm = list(uc.orthogonalization_matrix())
-    for i in range(9):
-      cm[i] /= a2b
-    cm = tuple(cm)
+    cm = np.array(uc.orthogonalization_matrix())
+    cm = a2b(cm)
     
     fm = list(uc.fractionalization_matrix())
     
@@ -997,7 +983,7 @@ def PDF_map(resolution=0.1, distance=1.0, second=True, third=True, fourth=True, 
               [size[2], 0]]
 
 # determine piece of grid that really needs evaluation
-    dist_bohr = distance / a2b
+    dist_bohr = a2b(distance)
     for a in range(n_atoms):
       if second is False:
         if anharms[a] is None:
@@ -1015,7 +1001,7 @@ def PDF_map(resolution=0.1, distance=1.0, second=True, third=True, fourth=True, 
       for i in range(3):
         for j in range(3):
           for k in range(8):
-            minmax[i+k*3] += cart_minmax[j+k*3] * fm[i*3+j] * size[i] * a2b
+            minmax[i+k*3] += b2a(cart_minmax[j+k*3] * fm[i*3+j] * size[i])
       for c in range(8):
         for i in range(3):
           if minmax[i+c*3] < limits[i][0]:
@@ -1045,8 +1031,9 @@ def PDF_map(resolution=0.1, distance=1.0, second=True, third=True, fourth=True, 
       # Skips NPD atoms
       if pre[a] < 0:
         continue
-      diff = [(pos[0] - posn[a][0]) * a2b, (pos[1] - posn[a][1]) * a2b,
-              (pos[2] - posn[a][2]) * a2b]
+      diff = [b2a(pos[0] - posn[a][0]),
+              b2a(pos[1] - posn[a][1]),
+              b2a(pos[2] - posn[a][2])]
       mhalfuTUu = np.fmin(-0.5 * (diff[0] * (diff[0] * sigmas[a][0]
                                              + diff[1] * sigmas[a][3]
                                              + diff[2] * sigmas[a][4])
@@ -1097,7 +1084,7 @@ def PDF_map(resolution=0.1, distance=1.0, second=True, third=True, fourth=True, 
       atom_nr = 0
       for i in range(n_atoms):
         diff = [(pos[0] - posn[i][0]), (pos[1] - posn[i][1]), (pos[2] - posn[i][2])]
-        dist = np.sqrt(diff[0] * diff[0] + diff[1] * diff[1] + diff[2] * diff[2]) * a2b
+        dist = b2a(np.sqrt(diff[0] * diff[0] + diff[1] * diff[1] + diff[2] * diff[2]))
         if dist < min_dist:
           min_dist = dist
           atom_nr = i
