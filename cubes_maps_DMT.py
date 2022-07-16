@@ -902,11 +902,8 @@ def U_to_sigma(U):
   return [U_loc[0][0], U_loc[1][1], U_loc[2][2], U_loc[0][1], U_loc[0][2], U_loc[1][2]]
 
 
-def digest_boolinput(i):
-  if i is False or i == "False" or i == "0":
-    return False
-  else:
-    return True
+def digest_boolinput(i: Union[bool, str]) -> bool:
+  return False if i is False or i == 'False' or i == '0' else True
 
 
 def PDF_map(resolution=0.1, distance=1.0, second=True, third=True, fourth=True, do_plot=True, save_cube=False):
