@@ -1024,7 +1024,7 @@ def PDF_map(resolution=0.1, distance=1.0, second=True, third=True, fourth=True, 
     pos = [xi * vecs[0][0] + yi * vecs[0][1] + zi * vecs[0][2],
            xi * vecs[1][0] + yi * vecs[1][1] + zi * vecs[1][2],
            xi * vecs[2][0] + yi * vecs[2][1] + zi * vecs[2][2]]
-    result = np.zeros_like(xi)
+    result = np.zeros_like(xi, dtype=np.float)
     for a in range(n_atoms):
       if second is False and anharms[a] is None:
         continue
