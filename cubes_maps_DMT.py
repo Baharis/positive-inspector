@@ -1061,12 +1061,16 @@ def PDF_map(resolution=0.1, distance=1.0, second=True, third=True, fourth=True, 
     xi_min, xi_max = limits[0][0], limits[0][1]
     yi_min, yi_max = limits[1][0], limits[1][1]
     zi_min, zi_max = limits[2][0], limits[2][1]
+    # xi_min, xi_max = 0, size[0]
+    # yi_min, yi_max = 0, size[1]
+    # zi_min, zi_max = 0, size[2]
     xyz_mesh_grid = np.mgrid[xi_min:xi_max, yi_min:yi_max, zi_min:zi_max]
     xi, yi, zi = map(np.ravel, xyz_mesh_grid)
 
     res = z_slice(zi, xi, yi, vecs, posn, sigmas, pre, n_atoms, anharms,
                   bool(second), bool(third), bool(fourth))
 
+    # data += flex.double(res)
     for x, y, z, val in zip(xi, yi, zi, res):
       start = ((x % size[0]) * size[1] + (y % size[1])) * size[2]
       data[start + (z % size[2])] += val
