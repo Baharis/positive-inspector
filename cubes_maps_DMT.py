@@ -960,11 +960,7 @@ def PDF_map(resolution=0.1, distance=1.0, second=True, third=True, fourth=True, 
   save_cube = digest_boolinput(save_cube)
   only_anh = digest_boolinput(only_anh)
   from cctbx import adptbx
-  import numpy as np
   from cctbx.array_family import flex
-  if second == False and third == False and fourth == False:
-    print("Well, what should I print then? Please decide what you want to see!")
-    return
   olex.m("kill $Q")
   OV.CreateBitmap("working")
   try:
@@ -972,7 +968,6 @@ def PDF_map(resolution=0.1, distance=1.0, second=True, third=True, fourth=True, 
     cctbx_adapter = OlexCctbxAdapter()
     uc = cctbx_adapter.xray_structure().unit_cell()
     fixed = math.pow(2 * math.pi, 1.5)
-    name = OV.ModelSrc()
     Us = []
     Us_cart = []
     sigmas = []
