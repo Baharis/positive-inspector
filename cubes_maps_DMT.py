@@ -136,13 +136,19 @@ def z_slice(z, x, y, vecs, posn, sigmas, pre, n_atoms, anharms, s, t, f, only_an
     P0 = pre[a] * np.exp(mhalfuTUu)
     P0[abs(P0) < 1E-30] = 0
     fact = float(s)
+    u = np.array(diff)
+    si_inv = np.array([(sigmas[0], sigmas[3], sigmas[4]),
+                       (sigmas[3], sigmas[1], sigmas[5]),
+                       (sigmas[4], sigmas[5], sigmas[2])])
     if anharms[a] is not None:
       if t is True:
         for i in range(10):
-          fact += anharms[a][i] * Hjkl(Cs[i], diff, sigmas[a]) / 6
+          hermite = HermitePolynomial(Cs[i])
+          fact += anharms[a][i] * hermite(u, si_inv) / 6
       if f is True:
         for i in range(10, 25):
-          fact += anharms[a][i] * Hjklm(Ds[i - 10], diff, sigmas[a]) / 24
+          hermite = HermitePolynomial(Ds[i - 10])
+          fact += anharms[a][i] * hermite(u, si_inv) / 24
     result += P0 * fact
   return result
 
