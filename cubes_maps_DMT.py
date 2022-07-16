@@ -1057,18 +1057,19 @@ def PDF_map(resolution=0.1, distance=1.0, second=True, third=True, fourth=True, 
     for i in range(3):
       limits[i][0] = math.floor(limits[i][0])
       limits[i][1] = math.ceil(limits[i][1])
-    grid_indices_x = range(limits[0][0], limits[0][1])
-    grid_indices_y = range(limits[1][0], limits[1][1])
-    grid_indices_z = range(limits[2][0], limits[2][1])
 
-    for x in range(limits[0][0], limits[0][1]):
-      for y in range(limits[1][0], limits[1][1]):
-        start = ((x % size[0]) * size[1] + (y % size[1])) * size[2]
-        zs = np.array(range(limits[2][0], limits[2][1]))
-        res = z_slice(zs, x, y, vecs, posn, sigmas, pre, n_atoms, anharms, bool(second), bool(third), bool(fourth))
-        for i, val in enumerate(res):
-          z = zs[i]
-          data[start + (z % size[2])] += val
+    xi_min, xi_max = limits[0][0], limits[0][1]
+    yi_min, yi_max = limits[1][0], limits[1][1]
+    zi_min, zi_max = limits[2][0], limits[2][1]
+    xyz_mesh_grid = np.mgrid[xi_min:xi_max, yi_min:yi_max, zi_min:zi_max]
+    xi, yi, zi = map(np.ravel, xyz_mesh_grid)
+
+    res = z_slice(zi, xi, yi, vecs, posn, sigmas, pre, n_atoms, anharms,
+                  bool(second), bool(third), bool(fourth))
+
+    for x, y, z, val in zip(xi, yi, zi, res):
+      start = ((x % size[0]) * size[1] + (y % size[1])) * size[2]
+      data[start + (z % size[2])] += val
 
     if second is False:
       print("Multiplying grid values with 1000 to get on visible scale")
