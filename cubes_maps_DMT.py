@@ -107,10 +107,9 @@ class HermitePolynomial:
     return [sum(si_inv[c, i] * u[:, i] for i in range(3)) for c in self.c]
 
 
-hermite_polynomials_of_3rd_order = [HermitePolynomial(c) for c in
-                                    HermitePolynomial.THIRD_ORDER_COEFFICIENTS]
-hermite_polynomials_of_4th_order = [HermitePolynomial(c) for c in
-                                    HermitePolynomial.FOURTH_ORDER_COEFFICIENTS]
+hermite_polynomials_of_3rd_and_4th_order = \
+  [HermitePolynomial(c) for c in HermitePolynomial.THIRD_ORDER_COEFFICIENTS] +\
+  [HermitePolynomial(c) for c in HermitePolynomial.FOURTH_ORDER_COEFFICIENTS]
 
 
 try:
@@ -939,7 +938,9 @@ def PDF_map(resolution=0.1, distance=1.0, second=True, third=True, fourth=True, 
       if atom.anharmonic_adp is None:
         anharms.append(None)
       else:
-        anharms.append(atom.anharmonic_adp.data())
+        anharmonic_values = np.array(atom.anharmonic_adp.data())
+        anharmonic_use = np.array([third, ] * 10 + [fourth, ] * 15, dtype=float)
+        anharms.append(anharmonic_use * anharmonic_values)
       Us_cart.append(adp_cart)
       sigmas_inv.append(adp_list_to_sigma_inv(adp_cart))
       pre_temp = linalg.det(sigmas_inv[-1])
@@ -1028,14 +1029,9 @@ def PDF_map(resolution=0.1, distance=1.0, second=True, third=True, fourth=True, 
       p0[abs(p0) < 1E-30] = 0
       fact = float(second)
       if anharms[a] is not None:
-        if third is True:
-          for i in range(10):
-            hermite = hermite_polynomials_of_3rd_order[i]
-            fact += anharms[a][i] * hermite(u, sigmas_inv[a]) / 6 / 8
-        if fourth is True:
-          for i in range(10, 25):
-            hermite = hermite_polynomials_of_4th_order[i - 10]
-            fact += anharms[a][i] * hermite(u, sigmas_inv[a]) / 24 / 16
+        for i, h in enumerate(hermite_polynomials_of_3rd_and_4th_order):
+          if anharms[a][i] != 0:
+            fact += anharms[a][i] * h(u, sigmas_inv[a]) / h.order_factorial
       result += p0 * fact
       # I have tested the code this weekend and it looks like the division
       # by 8 and 16 become necessary to get agreement with XD?
