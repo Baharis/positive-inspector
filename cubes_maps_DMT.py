@@ -45,14 +45,14 @@ def b2a(value: Union[int, float, np.ndarray] = 1) -> Union[float, np.ndarray]:
 
 
 class HermitePolynomial:
-  THIRD_ORDER_COEFFICIENTS = [[0, 0, 0], [0, 0, 1], [0, 0, 2], [0, 1, 1],
+  THIRD_ORDER_COEFFICIENTS = ([0, 0, 0], [0, 0, 1], [0, 0, 2], [0, 1, 1],
                               [0, 1, 2], [0, 2, 2], [1, 1, 1], [1, 1, 2],
-                              [1, 2, 2], [2, 2, 2]]
-  FOURTH_ORDER_COEFFICIENTS = [[0, 0, 0, 0], [0, 0, 0, 1], [0, 0, 0, 2],
+                              [1, 2, 2], [2, 2, 2])
+  FOURTH_ORDER_COEFFICIENTS = ([0, 0, 0, 0], [0, 0, 0, 1], [0, 0, 0, 2],
                                [0, 0, 1, 1], [0, 0, 1, 2], [0, 0, 2, 2],
                                [0, 1, 1, 1], [0, 1, 1, 2], [0, 1, 2, 2],
                                [0, 2, 2, 2], [1, 1, 1, 1], [1, 1, 1, 2],
-                               [1, 1, 2, 2], [1, 2, 2, 2], [2, 2, 2, 2]]
+                               [1, 1, 2, 2], [1, 2, 2, 2], [2, 2, 2, 2])
 
   def __init__(self, coefficients: Sequence[int]):
     self.c = coefficients
@@ -67,7 +67,7 @@ class HermitePolynomial:
   def __call__(self, u: np.ndarray, si_inv: np.ndarray) -> np.ndarray:
     return self._call(u, si_inv)
 
-  def __str__(self):
+  def __str__(self) -> str:
     return 'H' + ''.join([str(c + 1) for c in self.c])
 
   def _call(self, u: np.ndarray, si_inv: np.ndarray) -> np.ndarray:
@@ -77,7 +77,7 @@ class HermitePolynomial:
     wj, wk, wl = self.w(u, si_inv)
     r = wj * wl * wk - wj * si_inv[self.c[1], self.c[2]]\
         - wk * si_inv[self.c[2], self.c[0]] - wl * si_inv[self.c[0], self.c[1]]
-    return r * self.unique_permutations
+    return r * self.unique_indexing_permutations
 
   def _call_for_order_4(self, u: np.ndarray, si_inv: np.ndarray) -> np.ndarray:
     wj, wk, wl, wm = self.w(u, si_inv)
@@ -91,11 +91,15 @@ class HermitePolynomial:
          + si_inv[self.c[0], self.c[1]] * si_inv[self.c[2], self.c[3]]
          + si_inv[self.c[0], self.c[2]] * si_inv[self.c[1], self.c[3]]
          + si_inv[self.c[0], self.c[3]] * si_inv[self.c[1], self.c[2]])
-    return r * self.unique_permutations
+    return r * self.unique_indexing_permutations
 
   @property
-  def unique_permutations(self):
-    f = np.math.factorial
+  def order_factorial(self) -> int:
+    return math.factorial(self.order)
+
+  @property
+  def unique_indexing_permutations(self) -> int:
+    f = math.factorial
     v = self.c
     return f(self.order) / np.prod([f(v.count(i)) for i in range(self.order)])
 
