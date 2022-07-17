@@ -1023,15 +1023,19 @@ def PDF_map(resolution=0.1, distance=1.0, second=True, third=True, fourth=True, 
       p0 = pre[a] * np.exp(mhalfuTUu)
       p0[abs(p0) < 1E-30] = 0
       fact = float(second)
+      print(anharms)
       if anharms[a] is not None:
         if third is True:
           for i in range(10):
             hermite = hermite_polynomials_of_3rd_order[i]
+            print([min(hermite(u, sigmas_inv[a])), max(hermite(u, sigmas_inv[a])), sum(hermite(u, sigmas_inv[a]))])
             fact += anharms[a][i] * hermite(u, sigmas_inv[a]) / 6 / 8  # discuss with Florian?
         if fourth is True:
           for i in range(10, 25):
             hermite = hermite_polynomials_of_4th_order[i - 10]
             fact += anharms[a][i] * hermite(u, sigmas_inv[a]) / 24 / 16  # discuss with Florian?
+      print(min(fact), max(fact), sum(fact))
+      assert False
       result += p0 * fact
 
     result_matrix = result.reshape((xi_max - xi_min, yi_max - yi_min, zi_max - zi_min))
