@@ -1033,10 +1033,8 @@ def PDF_map(resolution=0.1, distance=1.0, second=True, third=True, fourth=True, 
           if anharms[a][i] != 0:
             fact += anharms[a][i] * h(u, sigmas_inv[a]) / h.order_factorial
       result += p0 * fact
-      # I have tested the code this weekend and it looks like the division
-      # by 8 and 16 become necessary to get agreement with XD?
-      # Whats more, this also seems true for earlier releases!
-      # It looks like something changed outside the code? Discuss this!
+      # TODO Discovered the problem is associated with unit size?
+      # TODO agreement only for 10x10x10 cell... check positive investigator
 
     result_matrix = result.reshape((xi_max - xi_min, yi_max - yi_min, zi_max - zi_min))
     data_matrix = np.zeros(shape=size)
