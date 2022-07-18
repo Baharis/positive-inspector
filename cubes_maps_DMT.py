@@ -64,8 +64,8 @@ class HermitePolynomial:
     else:
       raise NotImplementedError(f'Order {self.order} is not implemented')
 
-  def __call__(self, u: np.ndarray, si_inv: np.ndarray) -> np.ndarray:
-    return self._call(u, si_inv)
+  def __call__(self, u: np.ndarray, si_inv: np.ndarray, abc_star: Sequence) -> np.ndarray:
+    return self._call(u, si_inv) * 10 ** -self.order
 
   def __str__(self) -> str:
     return 'H' + ''.join([str(c + 1) for c in self.c])
@@ -89,7 +89,7 @@ class HermitePolynomial:
          - wk * wm * si_inv[self.c[2], self.c[0]]
          - wl * wm * si_inv[self.c[0], self.c[1]]
          + si_inv[self.c[0], self.c[1]] * si_inv[self.c[2], self.c[3]]
-         + si_inv[self.c[0], self.c[2]] * si_inv[self.c[1], self.c[3]]
+         + si_inv[self.c[0], self.c[2]] * si_inv[self.c[3], self.c[1]]
          + si_inv[self.c[0], self.c[3]] * si_inv[self.c[1], self.c[2]])
     return r * self.unique_indexing_permutations
 
@@ -924,6 +924,8 @@ def PDF_map(resolution=0.1, distance=1.0, second=True, third=True, fourth=True, 
     pre = []
     posn = []
     anharms = []
+    abc_frac = []
+    abc_star = []
     atoms = cctbx_adapter.xray_structure()._scatterers
     for atom in atoms:
       coordinates = np.array(uc.orthogonalize(atom.site))
@@ -942,7 +944,16 @@ def PDF_map(resolution=0.1, distance=1.0, second=True, third=True, fourth=True, 
         anharmonic_use = np.array([third, ] * 10 + [fourth, ] * 15, dtype=float)
         anharms.append(anharmonic_use * anharmonic_values)
       Us_cart.append(adp_cart)
-      sigmas_inv.append(adp_list_to_sigma_inv(adp_cart))
+      a_star, b_star, c_star, _, _, _ = uc.reciprocal_parameters()
+      abc_star.append(np.array([a_star, b_star, c_star], dtype=float))
+      abc_frac.append(atom.site)
+      adp_frac = [a_star * a_star * adp_cart[0],
+                  b_star * b_star * adp_cart[1],
+                  c_star * c_star * adp_cart[2],
+                  a_star * b_star * adp_cart[3],
+                  a_star * c_star * adp_cart[4],
+                  b_star * c_star * adp_cart[5]]
+      sigmas_inv.append(adp_list_to_sigma_inv(adp_frac))
       pre_temp = linalg.det(sigmas_inv[-1])
       if pre_temp < 0:
         print("Skipping NPD Atom", atom.label)
@@ -1023,7 +1034,10 @@ def PDF_map(resolution=0.1, distance=1.0, second=True, third=True, fourth=True, 
       if pre[a] < 0:
         continue
       u = b2a(np.array([pos[i] - posn[a][i] for i in range(3)])).T
-      mhalfuTUu = np.clip(-0.5 * np.sum(u * (u @ sigmas_inv[a]), axis=1),
+      u2 = np.vstack([xi / size[0] - abc_frac[a][0],
+                      yi / size[1] - abc_frac[a][1],
+                      zi / size[2] - abc_frac[a][2]]).T
+      mhalfuTUu = np.clip(-0.5 * np.sum(u2 * (u2 @ sigmas_inv[a]), axis=1),
                           a_min=None, a_max=0)
       p0 = pre[a] * np.exp(mhalfuTUu)
       p0[abs(p0) < 1E-30] = 0
@@ -1031,7 +1045,7 @@ def PDF_map(resolution=0.1, distance=1.0, second=True, third=True, fourth=True, 
       if anharms[a] is not None:
         for i, h in enumerate(hermite_polynomials_of_3rd_and_4th_order):
           if anharms[a][i] != 0:
-            fact += anharms[a][i] * h(u, sigmas_inv[a]) / h.order_factorial
+            fact += anharms[a][i] * h(u2, sigmas_inv[a], abc_star[a]) / h.order_factorial
       result += p0 * fact
       # TODO Discovered the problem is associated with unit size?
       # TODO agreement only for 10x10x10 cell... check positive investigator

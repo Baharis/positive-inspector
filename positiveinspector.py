@@ -420,7 +420,7 @@ class PDFGrid(object):
                                    env=my_env, stdout=subprocess.DEVNULL)
         process.wait()
         read = cls._read_from_grid_file(xd_grd_file_path)
-        new_array = read.array / setting.unit_cell_volume
+        new_array = read.array  # SWITCH TO FRAC: setting.unit_cell_volume
         new_origin = read.origin + setting.origin_position
         new_basis = setting.basis / np.linalg.norm(setting.basis, axis=1) \
                     * np.diag(read.basis)
