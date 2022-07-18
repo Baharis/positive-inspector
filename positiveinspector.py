@@ -77,11 +77,11 @@ USAGE        1  4  0  1  0  1  0  0  1  0  0  0  0  0
   0.000000  0.000000  0.000000  0.000000  0.000000  0.000000
 Fe(1)     3 2    0   1   0 4  1  1 0  0   0  {x:9.6f}  {y:9.6f}  {z:9.6f} 1.0000
   {U11:6.4e} {U22:6.4e} {U33:6.4e} {U12:6.4e} {U13:6.4e} {U23:6.4e}
-  {C111:6.4e} {C222:6.4e} {C333:6.4e} {C112:6.4e} {C122:6.4e}
-  {C113:6.4e} {C133:6.4e} {C223:6.4e} {C233:6.4e} {C123:6.4e}
-  {D1111:6.4e} {D2222:6.4e} {D3333:6.4e} {D1112:6.4e} {D1222:6.4e}
-  {D1113:6.4e} {D1333:6.4e} {D2223:6.4e} {D2333:6.4e} {D1122:6.4e}
-  {D1133:6.4e} {D2233:6.4e} {D1123:6.4e} {D1223:6.4e} {D1233:6.4e}
+  {xdC111:6.4e} {xdC222:6.4e} {xdC333:6.4e} {xdC112:6.4e} {xdC122:6.4e}
+  {xdC113:6.4e} {xdC133:6.4e} {xdC223:6.4e} {xdC233:6.4e} {xdC123:6.4e}
+  {xdD1111:6.4e} {xdD2222:6.4e} {xdD3333:6.4e} {xdD1112:6.4e} {xdD1222:6.4e}
+  {xdD1113:6.4e} {xdD1333:6.4e} {xdD2223:6.4e} {xdD2333:6.4e} {xdD1122:6.4e}
+  {xdD1133:6.4e} {xdD2233:6.4e} {xdD1123:6.4e} {xdD1223:6.4e} {xdD1233:6.4e}
   6.00000 0.00000
  1  1.000000  1.000000  1.000000  1.000000  1.000000  1.000000
  0.0000E+00 0.0000E+00 0.0000E+00 0.0000E+00 0.0000E+00 0.0000E+00 0.0000E+00
@@ -283,6 +283,13 @@ class SettingCase(MostlyDefaultDict):
     def format_dict(self) -> dict:
         """`self` dictionary with additional keywords used in template files"""
         d = dict(self)
+        xd_pars = dict()
+        for k, v in d.items():  # XD input: C & D multiplied by 1000 & 10000
+            if re.fullmatch(r'C[123]{3}', k):
+                xd_pars['xd' + k] = v * 1000
+            elif re.fullmatch(r'D[123]{4}', k):
+                xd_pars['xd' + k] = v * 10000
+        d.update(xd_pars)
         star2 = self['use_second']
         star3 = self.has_third_order_moment_parameters and self['use_third']
         star4 = self.has_fourth_order_moment_parameters and self['use_fourth']

@@ -65,7 +65,7 @@ class HermitePolynomial:
       raise NotImplementedError(f'Order {self.order} is not implemented')
 
   def __call__(self, u: np.ndarray, si_inv: np.ndarray, abc_star: Sequence) -> np.ndarray:
-    return self._call(u, si_inv) * 10 ** -self.order
+    return self._call(u, si_inv)
 
   def __str__(self) -> str:
     return 'H' + ''.join([str(c + 1) for c in self.c])
