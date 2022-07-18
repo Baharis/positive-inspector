@@ -947,12 +947,13 @@ def PDF_map(resolution=0.1, distance=1.0, second=True, third=True, fourth=True, 
       a_star, b_star, c_star, _, _, _ = uc.reciprocal_parameters()
       abc_star.append(np.array([a_star, b_star, c_star], dtype=float))
       abc_frac.append(atom.site)
-      adp_frac = [a_star * a_star * adp_cart[0],
-                  b_star * b_star * adp_cart[1],
-                  c_star * c_star * adp_cart[2],
-                  a_star * b_star * adp_cart[3],
-                  a_star * c_star * adp_cart[4],
-                  b_star * c_star * adp_cart[5]]
+      adp_frac = adp
+        # [a_star * a_star * adp_cart[0],
+        #           b_star * b_star * adp_cart[1],
+        #           c_star * c_star * adp_cart[2],
+        #           a_star * b_star * adp_cart[3],
+        #           a_star * c_star * adp_cart[4],
+        #           b_star * c_star * adp_cart[5]]
       sigmas_inv.append(adp_list_to_sigma_inv(adp_frac))
       pre_temp = linalg.det(sigmas_inv[-1])
       if pre_temp < 0:
