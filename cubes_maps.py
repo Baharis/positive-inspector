@@ -896,7 +896,7 @@ def PDF_map(resolution=0.1, dist=1.0, second=True, third=True, fourth=True, only
       if atom.u_star != (-1., -1., -1., -1., -1., -1.):
         adp_star = atom.u_star
       else:
-        adp_star = adptbx.u_iso_as_u_star(atom.u_iso)
+        adp_star = adptbx.u_iso_as_u_star(uc, atom.u_iso)
       if atom.anharmonic_adp == None:
         anharms.append(None)
       else:
