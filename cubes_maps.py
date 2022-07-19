@@ -976,23 +976,23 @@ def PDF_map(resolution=0.1, dist=1.0, second=True, third=True, fourth=True, only
     # evaluate the PDF on the grid
     result = np.zeros_like(xi, dtype=np.float)
     for a in range(n_atoms):
-      if second is False and anharms[a] is None:
+      if (second is False or only_anh is True) and anharms[a] is None:
         continue
       # Skips NPD atoms
       if pre[a] < 0:
         continue
-      u2 = np.vstack([xi / size[0] - posn[a][0],
-                      yi / size[1] - posn[a][1],
-                      zi / size[2] - posn[a][2]]).T
-      mhalfuTUu = np.clip(-0.5 * np.sum(u2 * (u2 @ sigmas[a]), axis=1),
-                              a_min=None, a_max=0)
+      u = np.vstack([xi / size[0] - posn[a][0],
+                     yi / size[1] - posn[a][1],
+                     zi / size[2] - posn[a][2]]).T
+      mhalfuTUu = np.clip(-0.5 * np.sum(u * (u @ sigmas[a]), axis=1),
+                          a_min=None, a_max=0)
       p0 = pre[a] * np.exp(mhalfuTUu)
       p0[abs(p0) < 1E-30] = 0
       fact = float(second)
       if anharms[a] is not None:
         for i, h in enumerate(hermite_polynomials_of_3rd_and_4th_order):
           if anharms[a][i] != 0:
-            fact += anharms[a][i] * h(u2, sigmas[a], abc_star) / h.order_factorial
+            fact += anharms[a][i] * h(u, sigmas[a], abc_star) / h.order_factorial
       result += p0 * fact
 
     # wrap the results back to the unit cell and assign them to the data flex
