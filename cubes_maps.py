@@ -914,7 +914,6 @@ def PDF_map(resolution=0.1, dist=1.0, second=True, third=True, fourth=True, only
 
     gridding = cctbx_adapter.xray_structure().gridding(step=float(resolution))
     size = list(gridding.n_real())
-    data = flex.double(size[0] * size[1] * size[2])
     n_atoms = len(posn)
 
     vecs = [(cm[0] / (size[0]), cm[1] / (size[1]), cm[2] / (size[2])),
@@ -926,50 +925,33 @@ def PDF_map(resolution=0.1, dist=1.0, second=True, third=True, fourth=True, only
     if OV.HasGUI():
       olx.Refresh()
 
-    limits = [[size[0], 0],
-              [size[1], 0],
-              [size[2], 0]]
+    # generate a grid to be eval
+    xyz_grid = np.array(np.mgrid[0:size[0], 0:size[1], 0:size[2]])
+    x_grid, y_grid, z_grid = map(np.ravel, xyz_grid)
+    mask = np.full_like(x_grid, False, dtype=bool)
 
-# determine piece of grid that really needs evaluation
+    # determine piece of grid that really needs evaluation, numpy-style
+    fractionization_array = np.array(fm, dtype=float).reshape(3, 3)
     for a in range(n_atoms):
       if second is False or only_anh is True:
         if anharms[a] is None:
           continue
-      pos_cart = uc.orthogonalize(posn[a])
-      cart_minmax = [pos_cart[0] - dist, pos_cart[1] - dist, pos_cart[2] - dist,
-                     pos_cart[0] + dist, pos_cart[1] + dist, pos_cart[2] + dist,
-                     pos_cart[0] - dist, pos_cart[1] + dist, pos_cart[2] + dist,
-                     pos_cart[0] - dist, pos_cart[1] - dist, pos_cart[2] + dist,
-                     pos_cart[0] + dist, pos_cart[1] - dist, pos_cart[2] - dist,
-                     pos_cart[0] + dist, pos_cart[1] + dist, pos_cart[2] - dist,
-                     pos_cart[0] - dist, pos_cart[1] + dist, pos_cart[2] - dist,
-                     pos_cart[0] + dist, pos_cart[1] - dist, pos_cart[2] + dist,
-                     ]
-      minmax = [0 for x in range(24)]
-      for i in range(3):
-        for j in range(3):
-          for k in range(8):
-            minmax[i + k * 3] += cart_minmax[j + k * 3] * fm[i * 3 + j] * size[i]
-      for c in range(8):
-        for i in range(3):
-          if minmax[i+c*3] < limits[i][0]:
-            limits[i][0] = minmax[i+c*3]
-          if minmax[i+c*3] > limits[i][1]:
-            limits[i][1] = minmax[i+c*3]
-    for i in range(3):
-      limits[i][0] = math.floor(limits[i][0])
-      limits[i][1] = math.ceil(limits[i][1])
-    xi_min, xi_max = limits[0][0], limits[0][1]
-    yi_min, yi_max = limits[1][0], limits[1][1]
-    zi_min, zi_max = limits[2][0], limits[2][1]
+      atom_coords_cart = np.array(uc.orthogonalize(posn[a]))
+      corner1_cart = atom_coords_cart - dist
+      corner2_cart = atom_coords_cart + dist
+      corner1_frac = fractionization_array @ corner1_cart.T
+      corner2_frac = fractionization_array @ corner2_cart.T
+      corner1_ind = np.array([corner1_frac[i] * size[i] for i in range(3)])
+      corner2_ind = np.array([corner2_frac[i] * size[i] for i in range(3)])
+      x_mask = (x_grid >= corner1_ind[0]) & (x_grid <= corner2_ind[0])
+      y_mask = (y_grid >= corner1_ind[1]) & (y_grid <= corner2_ind[1])
+      z_mask = (z_grid >= corner1_ind[2]) & (z_grid <= corner2_ind[2])
+      mask = mask | (x_mask & y_mask & z_mask)
+    xi = x_grid[mask]
+    yi = y_grid[mask]
+    zi = z_grid[mask]
 
-    xyz_mesh_grid = np.mgrid[xi_min:xi_max, yi_min:yi_max, zi_min:zi_max]
-    xi, yi, zi = map(np.ravel, xyz_mesh_grid)
-
-    pos = [xi * vecs[0][0] + yi * vecs[0][1] + zi * vecs[0][2],
-           xi * vecs[1][0] + yi * vecs[1][1] + zi * vecs[1][2],
-           xi * vecs[2][0] + yi * vecs[2][1] + zi * vecs[2][2]]
-
+    # calculate the grid
     result = np.zeros_like(xi, dtype=np.float)
     for a in range(n_atoms):
       if second is False and anharms[a] is None:
@@ -991,11 +973,13 @@ def PDF_map(resolution=0.1, dist=1.0, second=True, third=True, fourth=True, only
             fact += anharms[a][i] * h(u2, sigmas[a], abc_star) / h.order_factorial
       result += p0 * fact
 
-    result_matrix = result.reshape((xi_max - xi_min, yi_max - yi_min, zi_max - zi_min))
-    data_matrix = np.zeros(shape=size)
-    data_matrix[xi_min:xi_max, yi_min:yi_max, zi_min:zi_max] = result_matrix
-    data = flex.double(data_matrix.flatten())    
-    
+    data_array = np.zeros(shape=(size[0] * size[1] * size[2], ))
+    data_array[mask] = result
+    print(np.sum(mask, axis=None))
+    print(max(data_array[mask]), min(data_array[mask]),
+          max(data_array[~mask]), min(data_array[~mask]), mask.shape)
+    data = flex.double(data_array)
+
     stats = data.min_max_mean()
     if stats.min < -0.05:
       index = (data == stats.min).iselection()[0]
