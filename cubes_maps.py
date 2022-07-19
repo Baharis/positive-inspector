@@ -4,6 +4,7 @@ import olx
 import olex_core
 import math
 import numpy as np
+import itertools
 from scipy import linalg
 from typing import List, Sequence, Union
 
@@ -931,18 +932,23 @@ def PDF_map(resolution=0.1, dist=1.0, second=True, third=True, fourth=True, only
     mask = np.full_like(x_grid, False, dtype=bool)
 
     # determine piece of grid that really needs evaluation, numpy-style
-    fractionization_array = np.array(fm, dtype=float).reshape(3, 3)
+    def frac_limits(center: np.ndarray, radius: float,
+                    fractionization_array: np.ndarray) -> Sequence[np.ndarray]:
+      plus_minus_ones = np.array(list(itertools.product([-1, +1], repeat=3)))
+      corners_cart = center + plus_minus_ones * radius
+      corners_frac = (fractionization_array @ corners_cart.T).T
+      return np.min(corners_frac, axis=0), np.max(corners_frac, axis=0)
+
+    frac_arr = np.array(fm, dtype=float).reshape(3, 3)
+    size_arr = np.array(size)
     for a in range(n_atoms):
       if second is False or only_anh is True:
         if anharms[a] is None:
           continue
       atom_coords_cart = np.array(uc.orthogonalize(posn[a]))
-      corner1_cart = atom_coords_cart - dist
-      corner2_cart = atom_coords_cart + dist
-      corner1_frac = fractionization_array @ corner1_cart.T
-      corner2_frac = fractionization_array @ corner2_cart.T
-      corner1_ind = np.array([corner1_frac[i] * size[i] for i in range(3)])
-      corner2_ind = np.array([corner2_frac[i] * size[i] for i in range(3)])
+      corner1_frac, corner2_frac = frac_limits(atom_coords_cart, dist, frac_arr)
+      corner1_ind = corner1_frac * size_arr
+      corner2_ind = corner2_frac * size_arr
       x_mask = (x_grid >= corner1_ind[0]) & (x_grid <= corner2_ind[0])
       y_mask = (y_grid >= corner1_ind[1]) & (y_grid <= corner2_ind[1])
       z_mask = (z_grid >= corner1_ind[2]) & (z_grid <= corner2_ind[2])
@@ -975,9 +981,6 @@ def PDF_map(resolution=0.1, dist=1.0, second=True, third=True, fourth=True, only
 
     data_array = np.zeros(shape=(size[0] * size[1] * size[2], ))
     data_array[mask] = result
-    print(np.sum(mask, axis=None))
-    print(max(data_array[mask]), min(data_array[mask]),
-          max(data_array[~mask]), min(data_array[~mask]), mask.shape)
     data = flex.double(data_array)
 
     stats = data.min_max_mean()
