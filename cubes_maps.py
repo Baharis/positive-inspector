@@ -1,6 +1,4 @@
 import os
-import time
-
 import olex
 import olx
 import olex_core
@@ -895,7 +893,7 @@ def PDF_map(resolution=0.1, dist=1.0, second=True, third=True, fourth=True, only
     posn = []
     anharms = []
     for atom in cctbx_adapter.xray_structure()._scatterers:
-      posn.append(atom.site)
+      posn.append([coord % 1 for coord in atom.site])
       if atom.u_star != (-1., -1., -1., -1., -1., -1.):
         adp_star = atom.u_star
       else:
@@ -953,14 +951,14 @@ def PDF_map(resolution=0.1, dist=1.0, second=True, third=True, fourth=True, only
           index_limits(atom_coords_cart, dist, frac_arr, size_arr)
 
     # generate a whole grid to be evaluated
-    xi_min, yi_min, zi_min = np.min(corner1_indices, axis=0)
-    xi_max, yi_max, zi_max = np.max(corner2_indices, axis=0)
+    xi_min, yi_min, zi_min = np.min(corner1_indices, axis=0).astype(int)
+    xi_max, yi_max, zi_max = np.max(corner2_indices, axis=0).astype(int)
     xyz_grid = np.array(np.mgrid[xi_min:xi_max, yi_min:yi_max, zi_min:zi_max],
                         dtype=int)
     x_grid, y_grid, z_grid = map(np.ravel, xyz_grid)
     mask = np.full_like(x_grid, False, dtype=bool)
 
-    # determine piece of grid that really needs evaluation, numpy-style
+    # determine pieces of grid around atoms that really need evaluation
     for a in range(n_atoms):
       if second is False or only_anh is True:
         if anharms[a] is None:
@@ -975,7 +973,7 @@ def PDF_map(resolution=0.1, dist=1.0, second=True, third=True, fourth=True, only
     yi = y_grid[mask]
     zi = z_grid[mask]
 
-    # calculate the grid
+    # evaluate the PDF on the grid
     result = np.zeros_like(xi, dtype=np.float)
     for a in range(n_atoms):
       if second is False and anharms[a] is None:
@@ -997,15 +995,17 @@ def PDF_map(resolution=0.1, dist=1.0, second=True, third=True, fourth=True, only
             fact += anharms[a][i] * h(u2, sigmas[a], abc_star) / h.order_factorial
       result += p0 * fact
 
+    # wrap the results back to the unit cell and assign them to the data flex
     data_array = np.zeros(shape=(size[0], size[1], size[2], ))
-    t1 = time.perf_counter()
-    data_array[np.mod(xi, size[0]), np.mod(yi, size[1]), np.mod(zi, size[2])] = result
-    # for x, y, z, r in zip(np.mod(xi, size[0]), np.mod(yi, size[1]), \
-    #                       np.mod(zi, size[2]), result):
-    #   data_array[x, y, z] += r
-    print(f'ASGISNMENT TOOK {time.perf_counter() - t1} seconds')
+    x_cases = (xi < 0, (xi >= 0) & (xi < size[0]), xi >= size[0])
+    y_cases = (yi < 0, (yi >= 0) & (yi < size[1]), yi >= size[1])
+    z_cases = (zi < 0, (zi >= 0) & (zi < size[2]), zi >= size[2])
+    cases = (c[0] & c[1] & c[2] for c in itertools.product(x_cases, y_cases, z_cases))
+    for c in cases:
+      data_array[xi[c] % size[0], yi[c] % size[1], zi[c] % size[2]] += result[c]
     data = flex.double(data_array.flatten())
 
+    # plot and save the map
     stats = data.min_max_mean()
     if stats.min < -0.05:
       index = (data == stats.min).iselection()[0]
