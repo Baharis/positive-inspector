@@ -1,4 +1,6 @@
 import os
+import time
+
 import olex
 import olx
 import olex_core
@@ -914,7 +916,7 @@ def PDF_map(resolution=0.1, dist=1.0, second=True, third=True, fourth=True, only
       pre.append(pre_temp)
 
     gridding = cctbx_adapter.xray_structure().gridding(step=float(resolution))
-    size = list(gridding.n_real())
+    size = tuple(gridding.n_real())
     n_atoms = len(posn)
 
     vecs = [(cm[0] / (size[0]), cm[1] / (size[1]), cm[2] / (size[2])),
@@ -926,19 +928,20 @@ def PDF_map(resolution=0.1, dist=1.0, second=True, third=True, fourth=True, only
     if OV.HasGUI():
       olx.Refresh()
 
-    # generate a grid to be eval
-    xyz_grid = np.array(np.mgrid[0:size[0], 0:size[1], 0:size[2]])
-    x_grid, y_grid, z_grid = map(np.ravel, xyz_grid)
-    mask = np.full_like(x_grid, False, dtype=bool)
-
-    # determine piece of grid that really needs evaluation, numpy-style
-    def frac_limits(center: np.ndarray, radius: float,
-                    fractionization_array: np.ndarray) -> Sequence[np.ndarray]:
+    def index_limits(center: np.ndarray,
+                     radius: float,
+                     fractionization_array: np.ndarray,
+                     size_array: np.ndarray) -> Sequence[np.ndarray]:
+      """Calculate evaluation range based on radius and center"""
       plus_minus_ones = np.array(list(itertools.product([-1, +1], repeat=3)))
       corners_cart = center + plus_minus_ones * radius
       corners_frac = (fractionization_array @ corners_cart.T).T
-      return np.min(corners_frac, axis=0), np.max(corners_frac, axis=0)
+      return np.floor(np.min(corners_frac, axis=0) * size_array).astype(int), \
+             np.ceil(np.max(corners_frac, axis=0) * size_array).astype(int)
 
+    # determine grid index limits for every atom in asymmetric unit
+    corner1_indices = np.empty(shape=(n_atoms, 3))
+    corner2_indices = np.empty(shape=(n_atoms, 3))
     frac_arr = np.array(fm, dtype=float).reshape(3, 3)
     size_arr = np.array(size)
     for a in range(n_atoms):
@@ -946,9 +949,24 @@ def PDF_map(resolution=0.1, dist=1.0, second=True, third=True, fourth=True, only
         if anharms[a] is None:
           continue
       atom_coords_cart = np.array(uc.orthogonalize(posn[a]))
-      corner1_frac, corner2_frac = frac_limits(atom_coords_cart, dist, frac_arr)
-      corner1_ind = corner1_frac * size_arr
-      corner2_ind = corner2_frac * size_arr
+      corner1_indices[a], corner2_indices[a] = \
+          index_limits(atom_coords_cart, dist, frac_arr, size_arr)
+
+    # generate a whole grid to be evaluated
+    xi_min, yi_min, zi_min = np.min(corner1_indices, axis=0)
+    xi_max, yi_max, zi_max = np.max(corner2_indices, axis=0)
+    xyz_grid = np.array(np.mgrid[xi_min:xi_max, yi_min:yi_max, zi_min:zi_max],
+                        dtype=int)
+    x_grid, y_grid, z_grid = map(np.ravel, xyz_grid)
+    mask = np.full_like(x_grid, False, dtype=bool)
+
+    # determine piece of grid that really needs evaluation, numpy-style
+    for a in range(n_atoms):
+      if second is False or only_anh is True:
+        if anharms[a] is None:
+          continue
+      corner1_ind = corner1_indices[a]
+      corner2_ind = corner2_indices[a]
       x_mask = (x_grid >= corner1_ind[0]) & (x_grid <= corner2_ind[0])
       y_mask = (y_grid >= corner1_ind[1]) & (y_grid <= corner2_ind[1])
       z_mask = (z_grid >= corner1_ind[2]) & (z_grid <= corner2_ind[2])
@@ -979,9 +997,14 @@ def PDF_map(resolution=0.1, dist=1.0, second=True, third=True, fourth=True, only
             fact += anharms[a][i] * h(u2, sigmas[a], abc_star) / h.order_factorial
       result += p0 * fact
 
-    data_array = np.zeros(shape=(size[0] * size[1] * size[2], ))
-    data_array[mask] = result
-    data = flex.double(data_array)
+    data_array = np.zeros(shape=(size[0], size[1], size[2], ))
+    t1 = time.perf_counter()
+    data_array[np.mod(xi, size[0]), np.mod(yi, size[1]), np.mod(zi, size[2])] = result
+    # for x, y, z, r in zip(np.mod(xi, size[0]), np.mod(yi, size[1]), \
+    #                       np.mod(zi, size[2]), result):
+    #   data_array[x, y, z] += r
+    print(f'ASGISNMENT TOOK {time.perf_counter() - t1} seconds')
+    data = flex.double(data_array.flatten())
 
     stats = data.min_max_mean()
     if stats.min < -0.05:
