@@ -746,7 +746,7 @@ def write_map_to_cube(fft_map, map_name: str, size: tuple = ()) -> None:
       {size[0]:5d} {vecs[0][0]:11.6f} {vecs[1][0]:11.6f} {vecs[2][0]:11.6f}
       {size[1]:5d} {vecs[0][1]:11.6f} {vecs[1][1]:11.6f} {vecs[2][1]:11.6f}
       {size[2]:5d} {vecs[0][2]:11.6f} {vecs[1][2]:11.6f} {vecs[2][2]:11.6f}""")
-    cube.write(cube_header + '\n')
+    cube.write(cube_header)
 
     for i in range(n_atoms):
       atom_type = olx.xf.au.GetAtomType(i)
@@ -757,7 +757,7 @@ def write_map_to_cube(fft_map, map_name: str, size: tuple = ()) -> None:
           break
       if charge == 200:
         print("ATOM NOT FOUND!")
-      cube.write(f'{charge:5d} {charge:11.6f} {positions[i][0]:11.6f} '
+      cube.write(f'\n{charge:5d} {charge:11.6f} {positions[i][0]:11.6f} '
                  f'{positions[i][1]:11.6f} {positions[i][2]:11.6f}')
 
     for x in range(size[0]):
