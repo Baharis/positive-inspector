@@ -719,31 +719,30 @@ def write_map_to_cube(fft_map, map_name: str, size: tuple = ()) -> None:
   except:
     values = fft_map
     temp = size
-  size = [int(temp[0]),int(temp[1]),int(temp[2])]
-  name = OV.ModelSrc()
+  size = [int(t) for t in temp[0:3]]
+  structure_name = OV.ModelSrc()
 
   n_atoms = int(olx.xf.au.GetAtomCount())
-  positions = [[float(0.0) for k in range(3)] for l in range(n_atoms)]
+  positions = [[0., 0., 0.] for _ in range(n_atoms)]
   cm = list(uc.orthogonalization_matrix())
   for i in range(9):
     cm[i] /= a2b
   cm = tuple(cm)  
   for a in range(n_atoms):
-      pos = olx.xf.au.Orthogonalise(olx.xf.au.GetAtomCrd(a)).split(',')
-      positions[a] = [float(pos[0]) / a2b, float(pos[1]) / a2b, float(pos[2]) / a2b]
+    position = olx.xf.au.Orthogonalise(olx.xf.au.GetAtomCrd(a)).split(',')
+    positions[a] = [float(position[i]) / a2b for i in range(3)]
 
   vecs = [(cm[0] / (size[0]), cm[1] / (size[1]), cm[2] / (size[2])),
           (cm[3] / (size[0]), cm[4] / (size[1]), cm[5] / (size[2])),
           (cm[6] / (size[0]), cm[7] / (size[1]), cm[8] / (size[2]))]
 
-  print ("start writing a %4d x %4d x %4d cube"%(size[0],size[1],size[2]))
-  
+  print("start writing a %4d x %4d x %4d cube" % (size[0], size[1], size[2]))
 
-  with open("%s_%s.cube"%(name,map_name),'w') as cube:
+  with open("%s_%s.cube" % (structure_name, map_name), 'w') as cube:
     cube.write("Fourier synthesis map created by Olex2\n")
-    cube.write("Model name: %s\n"%name)
+    cube.write("Model name: %s\n" % structure_name)
     # Origin of cube
-    cube.write("%6d %12.8f %12.8f %12.8f\n"%(n_atoms,0.0,0.0,0.0))
+    cube.write("%6d %12.8f %12.8f %12.8f\n" % (n_atoms, 0.0, 0.0, 0.0))
     # need to write vectors!
     cube.write("%6d %12.8f %12.8f %12.8f\n" % (size[0], vecs[0][0], vecs[1][0], vecs[2][0]))
     cube.write("%6d %12.8f %12.8f %12.8f\n" % (size[1], vecs[0][1], vecs[1][1], vecs[2][1]))
@@ -762,18 +761,17 @@ def write_map_to_cube(fft_map, map_name: str, size: tuple = ()) -> None:
       for y in range(size[1]):
         string = ""
         for z in range(size[2]):
-          string += ("%15.7e"%values[(x*size[1]+y)*size[2]+z])
+          string += ("%15.7e" % values[(x*size[1]+y)*size[2]+z])
           if (z+1) % 6 == 0 and (z+1) != size[2]:
             string += '\n'
-        if (y != (size[1] - 1)):
+        if y != (size[1] - 1):
           string += '\n'
         cube.write(string)
-      if(x != (size[0] -1)):
+      if x != (size[0] - 1):
         cube.write('\n')
-
     cube.close()
-
   print("Saved Fourier map successfully")
+
 
 def residual_map(resolution=0.1,return_map=False,print_peaks=False):
   cctbx_adapter = OlexCctbxAdapter()
