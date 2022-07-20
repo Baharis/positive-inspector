@@ -877,6 +877,7 @@ def PDF_map(resolution=0.1, dist=1.0, second=True, third=True, fourth=True, only
   do_plot = digest_boolinput(do_plot)
   save_cube = digest_boolinput(save_cube)
   only_anh = digest_boolinput(only_anh)
+  print("PDF Maps implemented and tested by Florian Kleemiss and Daniel Tchon")
   if second == False and third == False and fourth == False:
     print("Well, what should I print then? Please decide what you want to see!")
     return
@@ -976,32 +977,27 @@ def PDF_map(resolution=0.1, dist=1.0, second=True, third=True, fourth=True, only
     pdfs = np.zeros_like(xi, dtype=np.float)
     for a in range(n_atoms):
       if (second is False or only_anh is True) and anharms[a] is None:
-        continue
-      # Skips NPD atoms
-      if pre[a] < 0:
-        continue
-      u = np.vstack([xi[masks[a]] / size[0] - posn[a][0],
-                     yi[masks[a]] / size[1] - posn[a][1],
-                     zi[masks[a]] / size[2] - posn[a][2]]).T
-      mhalfuTUu = np.clip(-0.5 * np.sum(u * (u @ sigmas[a]), axis=1),
-                          a_min=None, a_max=0)
-      p0 = pre[a] * np.exp(mhalfuTUu)
-      p0[abs(p0) < 1E-30] = 0
-      fact = float(second)
-      if anharms[a] is not None:
-        for i, h in enumerate(hermite_polynomials_of_3rd_and_4th_order):
-          if anharms[a][i] != 0:
-            fact += anharms[a][i] * h(u, sigmas[a]) / h.order_factorial
-      pdf = p0 * fact
-      pdfs[masks[a]] += pdf
+        pdf = np.zeros(1)
+      elif pre[a] < 0:  # Skip NPD atoms
+        pdf = np.zeros(1)
+      else:
+        u = np.vstack([xi[masks[a]] / size[0] - posn[a][0],
+                       yi[masks[a]] / size[1] - posn[a][1],
+                       zi[masks[a]] / size[2] - posn[a][2]]).T
+        mhalfuTUu = np.clip(-0.5 * np.sum(u * (u @ sigmas[a]), axis=1),
+                            a_min=None, a_max=0)
+        p0 = pre[a] * np.exp(mhalfuTUu)
+        p0[abs(p0) < 1E-30] = 0
+        fact = float(second)
+        if anharms[a] is not None:
+          for i, h in enumerate(hermite_polynomials_of_3rd_and_4th_order):
+            if anharms[a][i] != 0:
+              fact += anharms[a][i] * h(u, sigmas[a]) / h.order_factorial
+        pdf = p0 * fact
+        pdfs[masks[a]] += pdf
       positive_integrals.append(np.sum(pdf[pdf > 0]) * volume_scale_factor)
       negative_integrals.append(np.sum(pdf[pdf < 0]) * volume_scale_factor)
       negative_volumes.append(pdf[pdf < 0].size * volume_scale_factor)
-      label = str(cctbx_adapter.xray_structure()._scatterers[a].label)
-      print(f'Atom {label}: '
-            f'+int= {positive_integrals[-1]:12.4e}, '
-            f'-int= {negative_integrals[-1]:12.4e}, '
-            f'-vol= {negative_volumes[-1]:12.4e} A^3.')
 
     # wrap the results back to the unit cell and assign them to the data flex
     data_array = np.zeros(shape=(size[0], size[1], size[2], ))
@@ -1017,10 +1013,9 @@ def PDF_map(resolution=0.1, dist=1.0, second=True, third=True, fourth=True, only
     stats = data.min_max_mean()
     if stats.min < -0.05:
       index = (data == stats.min).iselection()[0]
-      x = math.floor(index / (size[2] * size[1]))
-      index -= x * size[2] * size[1]
-      y = math.floor(index / size[2])
-      z = index % size[2]
+      x = index // (size[2] * size[1])
+      y = (index - x * size[2] * size[1]) // size[2]
+      z = (index - x * size[2] * size[1]) % size[2]
       pos = [(x) * vecs[0][0] + (y) * vecs[0][1] + (z) * vecs[0][2],
              (x) * vecs[1][0] + (y) * vecs[1][1] + (z) * vecs[1][2],
              (x) * vecs[2][0] + (y) * vecs[2][1] + (z) * vecs[2][2]]
@@ -1033,8 +1028,15 @@ def PDF_map(resolution=0.1, dist=1.0, second=True, third=True, fourth=True, only
         if dist_ < min_dist:
           min_dist = dist_
           atom_nr = i
-      print("WARNING! Significant negative PDF for Atom: " + str(cctbx_adapter.xray_structure()._scatterers[atom_nr].label))
+      label = str(cctbx_adapter.xray_structure()._scatterers[atom_nr].label)
+      print("WARNING! Significant negative PDF for Atom: " + label)
       print("WARNING! At a distance of {:8.3f} Angs".format(min_dist))
+      for a in range(n_atoms):
+        if negative_integrals[a] < -0.0001:
+          label = str(cctbx_adapter.xray_structure()._scatterers[a].label)
+          print(f"WARNING! Integrated negative probability of "
+                f"{-negative_integrals[a]:.2%} to find atom {label} "
+                f"in a {1e6 * negative_volumes[a]:.0f} pm^3 volume!")
     data.reshape(flex.grid(size[0], size[1], size[2]))
     if save_cube:
       write_map_to_cube(data, "PDF", size)
@@ -1049,7 +1051,6 @@ def PDF_map(resolution=0.1, dist=1.0, second=True, third=True, fourth=True, only
     raise(e)
 
   OV.DeleteBitmap("working")
-  print("PDF Maps as implemented and tested by Florian Kleemiss and Daniel Tchon!")
 OV.registerFunction(PDF_map, False, "NoSpherA2")
 
 def tomc_map(resolution=0.1, return_map=False, use_f000=False):
