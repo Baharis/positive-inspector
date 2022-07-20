@@ -955,23 +955,20 @@ def PDF_map(resolution=0.1, dist=1.0, second=True, third=True, fourth=True, only
     xi_max, yi_max, zi_max = np.max(corner2_indices, axis=0).astype(int)
     xyz_grid = np.array(np.mgrid[xi_min:xi_max, yi_min:yi_max, zi_min:zi_max],
                         dtype=int)
-    x_grid, y_grid, z_grid = map(np.ravel, xyz_grid)
-    mask = np.full_like(x_grid, False, dtype=bool)
+    xi, yi, zi = map(np.ravel, xyz_grid)
 
     # determine pieces of grid around atoms that really need evaluation
+    masks = []
     for a in range(n_atoms):
       if second is False or only_anh is True:
         if anharms[a] is None:
           continue
       corner1_ind = corner1_indices[a]
       corner2_ind = corner2_indices[a]
-      x_mask = (x_grid >= corner1_ind[0]) & (x_grid <= corner2_ind[0])
-      y_mask = (y_grid >= corner1_ind[1]) & (y_grid <= corner2_ind[1])
-      z_mask = (z_grid >= corner1_ind[2]) & (z_grid <= corner2_ind[2])
-      mask = mask | (x_mask & y_mask & z_mask)
-    xi = x_grid[mask]
-    yi = y_grid[mask]
-    zi = z_grid[mask]
+      x_mask = (xi >= corner1_ind[0]) & (xi <= corner2_ind[0])
+      y_mask = (yi >= corner1_ind[1]) & (yi <= corner2_ind[1])
+      z_mask = (zi >= corner1_ind[2]) & (zi <= corner2_ind[2])
+      masks.append(x_mask & y_mask & z_mask)
 
     # evaluate the PDF on the grid
     result = np.zeros_like(xi, dtype=np.float)
@@ -981,9 +978,9 @@ def PDF_map(resolution=0.1, dist=1.0, second=True, third=True, fourth=True, only
       # Skips NPD atoms
       if pre[a] < 0:
         continue
-      u = np.vstack([xi / size[0] - posn[a][0],
-                     yi / size[1] - posn[a][1],
-                     zi / size[2] - posn[a][2]]).T
+      u = np.vstack([xi[masks[a]] / size[0] - posn[a][0],
+                     yi[masks[a]] / size[1] - posn[a][1],
+                     zi[masks[a]] / size[2] - posn[a][2]]).T
       mhalfuTUu = np.clip(-0.5 * np.sum(u * (u @ sigmas[a]), axis=1),
                           a_min=None, a_max=0)
       p0 = pre[a] * np.exp(mhalfuTUu)
@@ -993,7 +990,7 @@ def PDF_map(resolution=0.1, dist=1.0, second=True, third=True, fourth=True, only
         for i, h in enumerate(hermite_polynomials_of_3rd_and_4th_order):
           if anharms[a][i] != 0:
             fact += anharms[a][i] * h(u, sigmas[a], abc_star) / h.order_factorial
-      result += p0 * fact
+      result[masks[a]] += p0 * fact
 
     # wrap the results back to the unit cell and assign them to the data flex
     data_array = np.zeros(shape=(size[0], size[1], size[2], ))
