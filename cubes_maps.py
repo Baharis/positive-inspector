@@ -767,7 +767,7 @@ def write_map_to_cube(fft_map, map_name: str, size: tuple = ()) -> None:
         slice_text = '\n'.join([''.join(s for s in slice_list[6*n:6*n+6])
                                 for n in range(-(-len(slice_values) // 6))])
         cube.write('\n' + slice_text)
-  print(f'Saved {map_name}-type map successfully')
+    print(f'Saved {map_name}-type map as {os.path.realpath(cube.name)}')
 
 
 def residual_map(resolution=0.1,return_map=False,print_peaks=False):
