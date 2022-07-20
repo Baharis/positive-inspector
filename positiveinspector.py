@@ -529,9 +529,9 @@ class PDFGrid(object):
     @classmethod
     def all_match(cls, *pdf_maps):
         try:
-            shapes_match = cls.all_equal(p.array.shape for p in pdf_maps)
-            origins_match = cls.all_close(p.origin for p in pdf_maps)
-            basis_match = cls.all_close(p.basis for p in pdf_maps)
+            shapes_match = cls.all_equal(*[p.array.shape for p in pdf_maps])
+            origins_match = cls.all_close(*[p.origin for p in pdf_maps])
+            basis_match = cls.all_close(*[p.basis for p in pdf_maps])
         except (AttributeError, ValueError):
             m = 'All compared objects must be PDFGrids'
             raise NotImplementedError(m)
