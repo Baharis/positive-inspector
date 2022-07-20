@@ -970,8 +970,10 @@ def PDF_map(resolution=0.1, dist=1.0, second=True, third=True, fourth=True, only
       z_mask = (zi >= corner1_ind[2]) & (zi <= corner2_ind[2])
       masks.append(x_mask & y_mask & z_mask)
 
-    # evaluate the PDF on the grid
-    result = np.zeros_like(xi, dtype=np.float)
+    # prepare lists for integration and evaluate the PDF on the grid
+    positive_integrals, negative_integrals, negative_volumes = [], [], []
+    volume_scale_factor = linalg.det(np.array(vecs)) / uc.volume()
+    pdfs = np.zeros_like(xi, dtype=np.float)
     for a in range(n_atoms):
       if (second is False or only_anh is True) and anharms[a] is None:
         continue
@@ -990,7 +992,16 @@ def PDF_map(resolution=0.1, dist=1.0, second=True, third=True, fourth=True, only
         for i, h in enumerate(hermite_polynomials_of_3rd_and_4th_order):
           if anharms[a][i] != 0:
             fact += anharms[a][i] * h(u, sigmas[a]) / h.order_factorial
-      result[masks[a]] += p0 * fact
+      pdf = p0 * fact
+      pdfs[masks[a]] += pdf
+      positive_integrals.append(np.sum(pdf[pdf > 0]) * volume_scale_factor)
+      negative_integrals.append(np.sum(pdf[pdf < 0]) * volume_scale_factor)
+      negative_volumes.append(pdf[pdf < 0].size * volume_scale_factor)
+      label = str(cctbx_adapter.xray_structure()._scatterers[a].label)
+      print(f'Atom {label}: '
+            f'+int= {positive_integrals[-1]:12.4e}, '
+            f'-int= {negative_integrals[-1]:12.4e}, '
+            f'-vol= {negative_volumes[-1]:12.4e} A^3.')
 
     # wrap the results back to the unit cell and assign them to the data flex
     data_array = np.zeros(shape=(size[0], size[1], size[2], ))
@@ -999,7 +1010,7 @@ def PDF_map(resolution=0.1, dist=1.0, second=True, third=True, fourth=True, only
     z_cases = (zi < 0, (zi >= 0) & (zi < size[2]), zi >= size[2])
     cases = (c[0] & c[1] & c[2] for c in itertools.product(x_cases, y_cases, z_cases))
     for c in cases:
-      data_array[xi[c] % size[0], yi[c] % size[1], zi[c] % size[2]] += result[c]
+      data_array[xi[c] % size[0], yi[c] % size[1], zi[c] % size[2]] += pdfs[c]
     data = flex.double(data_array.flatten())
 
     # plot and save the map
