@@ -708,7 +708,8 @@ def plot_map(data, iso, dist=1.0, min_v=0, max_v=20):
   olex_xgrid.SetSurfaceScale(iso)
   olex_xgrid.SetVisible(True)
 
-def plot_fft_map_cube(fft_map, map_name, size=[]):
+
+def write_map_to_cube(fft_map, map_name: str, size: tuple = ()) -> None:
   cctbx_adapter = OlexCctbxAdapter()
   xray_structure = cctbx_adapter.xray_structure()
   uc = xray_structure.unit_cell()
@@ -851,7 +852,7 @@ def residual_map(resolution=0.1,return_map=False,print_peaks=False):
       OV.Refresh()
   if return_map==True:
     return diff_map
-  plot_fft_map_cube(diff_map,"diff")
+  write_map_to_cube(diff_map, "diff")
 
 OV.registerFunction(residual_map, False, "NoSpherA2")
 
@@ -1026,7 +1027,7 @@ def PDF_map(resolution=0.1, dist=1.0, second=True, third=True, fourth=True, only
       print("WARNING! At a distance of {:8.3f} Angs".format(min_dist))
     data.reshape(flex.grid(size[0], size[1], size[2]))
     if save_cube:
-      plot_fft_map_cube(data, "PDF", size)
+      write_map_to_cube(data, "PDF", size)
 
     if do_plot:
       iso = -3.1415
@@ -1088,7 +1089,7 @@ def tomc_map(resolution=0.1, return_map=False, use_f000=False):
                               resolution_factor=1, grid_step=float(resolution)).apply_volume_scaling()
   if return_map == True:
     return tomc_map
-  plot_fft_map_cube(tomc_map,"tomc")
+  write_map_to_cube(tomc_map, "tomc")
 
 OV.registerFunction(tomc_map, False, "NoSpherA2")
 
@@ -1116,7 +1117,7 @@ def deformation_map(resolution=0.1, return_map=False):
                            resolution_factor=1,grid_step=float(resolution)).apply_volume_scaling()
   if return_map==True:
     return def_map
-  plot_fft_map_cube(def_map,"deform")
+  write_map_to_cube(def_map, "deform")
 
 OV.registerFunction(deformation_map, False, "NoSpherA2")
 
@@ -1153,7 +1154,7 @@ def obs_map(resolution=0.1, return_map=False, use_f000=False):
                               resolution_factor=1,grid_step=float(resolution)).apply_volume_scaling()
   if return_map==True:
     return obs_map
-  plot_fft_map_cube(obs_map,"obs")
+  write_map_to_cube(obs_map, "obs")
 
 OV.registerFunction(obs_map, False, "NoSpherA2")
 
@@ -1184,7 +1185,7 @@ def calc_map(resolution=0.1,return_map=False, use_f000=False):
                               resolution_factor=1, grid_step=float(resolution)).apply_volume_scaling()
   if return_map==True:
     return calc_map
-  plot_fft_map_cube(calc_map,"calc")
+  write_map_to_cube(calc_map, "calc")
 
 OV.registerFunction(calc_map, False, "NoSpherA2")
 
