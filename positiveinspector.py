@@ -431,7 +431,9 @@ class PDFGrid(object):
         new_origin = read.origin + setting.origin_position
         new_basis = setting.basis / np.linalg.norm(setting.basis, axis=1) \
                     * np.diag(read.basis)
-        return cls(new_array, new_origin, *new_basis)
+        new = cls(new_array, new_origin, *new_basis)
+        center = setting.atom_position
+        return new.trim_around(center, radius=float(setting['grid_radius']))
 
     @classmethod
     def _generate_from_setting_using_olex2(cls, setting: SettingCase):
@@ -451,8 +453,7 @@ class PDFGrid(object):
         new = cls._read_from_cube_file(olex2_cube_file_path)
         new.array = new.array if setting['use_second'] else new.array / 1000.
         center = setting.atom_position
-        new = new.trim_around(center, radius=float(setting['grid_radius']))
-        return new
+        return new.trim_around(center, radius=float(setting['grid_radius']))
 
     @classmethod
     def _read_from_cube_file(cls, path: Union[str, pathlib.Path]):
@@ -506,8 +507,8 @@ class PDFGrid(object):
     @classmethod
     def all_close(cls, *args):
         """Returns True only when all arguments are within tolerance"""
-        return len(args) < 2 or all(np.isclose(args[0], a, rtol=cls.RTOL,
-                                               atol=cls.ATOL) for a in args[1:])
+        return len(args) < 2 or all(np.isclose(
+            args[0], a, rtol=cls.RTOL, atol=cls.ATOL).all() for a in args[1:])
 
     @classmethod
     def all_close2(cls, *args: np.ndarray):
@@ -529,9 +530,9 @@ class PDFGrid(object):
     @classmethod
     def all_match(cls, *pdf_maps):
         try:
-            shapes_match = cls.all_equal(p.array.shape for p in pdf_maps)
-            origins_match = cls.all_close(p.origin for p in pdf_maps)
-            basis_match = cls.all_close(p.basis for p in pdf_maps)
+            shapes_match = cls.all_equal(*[p.array.shape for p in pdf_maps])
+            origins_match = cls.all_close(*[p.origin for p in pdf_maps])
+            basis_match = cls.all_close(*[p.basis for p in pdf_maps])
         except (AttributeError, ValueError):
             m = 'All compared objects must be PDFGrids'
             raise NotImplementedError(m)
@@ -660,7 +661,7 @@ class PDFGrid(object):
     def trim_around(self,
                     center: np.ndarray,
                     radius: float,
-                    tolerance: float = 1e-4):
+                    tolerance: float = 1e-3):
         """Trim to `radius` with maximum norm of `self.basis` around `center`"""
         x_0i, y_0i, z_0i = self.position2indices(center)
         x_ri = radius / np.linalg.norm(self.basis[0]) + tolerance

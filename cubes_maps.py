@@ -6,6 +6,7 @@ import math
 import numpy as np
 import itertools
 from scipy import linalg
+import textwrap
 from typing import List, Sequence, Union
 
 from olexFunctions import OV
@@ -43,7 +44,7 @@ class HermitePolynomial:
     else:
       raise NotImplementedError(f'Order {self.order} is not implemented')
 
-  def __call__(self, u: np.ndarray, si_inv: np.ndarray, abc_star: Sequence) -> np.ndarray:
+  def __call__(self, u: np.ndarray, si_inv: np.ndarray) -> np.ndarray:
     return self._call(u, si_inv)
 
   def __str__(self) -> str:
@@ -708,7 +709,8 @@ def plot_map(data, iso, dist=1.0, min_v=0, max_v=20):
   olex_xgrid.SetSurfaceScale(iso)
   olex_xgrid.SetVisible(True)
 
-def plot_fft_map_cube(fft_map, map_name, size=[]):
+
+def write_map_to_cube(fft_map, map_name: str, size: tuple = ()) -> None:
   cctbx_adapter = OlexCctbxAdapter()
   xray_structure = cctbx_adapter.xray_structure()
   uc = xray_structure.unit_cell()
@@ -718,35 +720,34 @@ def plot_fft_map_cube(fft_map, map_name, size=[]):
   except:
     values = fft_map
     temp = size
-  size = [int(temp[0]),int(temp[1]),int(temp[2])]
-  name = OV.ModelSrc()
+  size = [int(t) for t in temp[0:3]]
+  model_name = OV.ModelSrc()
 
   n_atoms = int(olx.xf.au.GetAtomCount())
-  positions = [[float(0.0) for k in range(3)] for l in range(n_atoms)]
+  positions = [[0., 0., 0.] for _ in range(n_atoms)]
   cm = list(uc.orthogonalization_matrix())
   for i in range(9):
     cm[i] /= a2b
   cm = tuple(cm)  
   for a in range(n_atoms):
-      pos = olx.xf.au.Orthogonalise(olx.xf.au.GetAtomCrd(a)).split(',')
-      positions[a] = [float(pos[0]) / a2b, float(pos[1]) / a2b, float(pos[2]) / a2b]
+    position = olx.xf.au.Orthogonalise(olx.xf.au.GetAtomCrd(a)).split(',')
+    positions[a] = [float(position[i]) / a2b for i in range(3)]
 
   vecs = [(cm[0] / (size[0]), cm[1] / (size[1]), cm[2] / (size[2])),
           (cm[3] / (size[0]), cm[4] / (size[1]), cm[5] / (size[2])),
           (cm[6] / (size[0]), cm[7] / (size[1]), cm[8] / (size[2]))]
 
-  print ("start writing a %4d x %4d x %4d cube"%(size[0],size[1],size[2]))
-  
+  print(f'Started writing a {size[0]:4d} x {size[1]:4d} x {size[2]:4d} cube')
+  with open(f'{model_name}_{map_name}.cube', 'w') as cube:
+    cube_header = textwrap.dedent(f"""\
+      {map_name}-type map created by Olex2
+      Model name: {model_name}
+      {n_atoms:5d} {0:11.6f} {0:11.6f} {0:11.6f}
+      {size[0]:5d} {vecs[0][0]:11.6f} {vecs[1][0]:11.6f} {vecs[2][0]:11.6f}
+      {size[1]:5d} {vecs[0][1]:11.6f} {vecs[1][1]:11.6f} {vecs[2][1]:11.6f}
+      {size[2]:5d} {vecs[0][2]:11.6f} {vecs[1][2]:11.6f} {vecs[2][2]:11.6f}""")
+    cube.write(cube_header + '\n')
 
-  with open("%s_%s.cube"%(name,map_name),'w') as cube:
-    cube.write("Fourier synthesis map created by Olex2\n")
-    cube.write("Model name: %s\n"%name)
-    # Origin of cube
-    cube.write("%6d %12.8f %12.8f %12.8f\n"%(n_atoms,0.0,0.0,0.0))
-    # need to write vectors!
-    cube.write("%6d %12.8f %12.8f %12.8f\n" % (size[0], vecs[0][0], vecs[1][0], vecs[2][0]))
-    cube.write("%6d %12.8f %12.8f %12.8f\n" % (size[1], vecs[0][1], vecs[1][1], vecs[2][1]))
-    cube.write("%6d %12.8f %12.8f %12.8f\n" % (size[2], vecs[0][2], vecs[1][2], vecs[2][2]))
     for i in range(n_atoms):
       atom_type = olx.xf.au.GetAtomType(i)
       charge = 200
@@ -756,23 +757,18 @@ def plot_fft_map_cube(fft_map, map_name, size=[]):
           break
       if charge == 200:
         print("ATOM NOT FOUND!")
-      cube.write("%6d %6d.00000 %12.8f %12.8f %12.8f\n" % (charge, charge, positions[i][0], positions[i][1], positions[i][2]))
+      cube.write(f'{charge:5d} {charge:11.6f} {positions[i][0]:11.6f} '
+                 f'{positions[i][1]:11.6f} {positions[i][2]:11.6f}')
+
     for x in range(size[0]):
       for y in range(size[1]):
-        string = ""
-        for z in range(size[2]):
-          string += ("%15.7e"%values[(x*size[1]+y)*size[2]+z])
-          if (z+1) % 6 == 0 and (z+1) != size[2]:
-            string += '\n'
-        if (y != (size[1] - 1)):
-          string += '\n'
-        cube.write(string)
-      if(x != (size[0] -1)):
-        cube.write('\n')
+        slice_values = values[(x*size[1]+y)*size[2]:(x*size[1]+y+1)*size[2]]
+        slice_list = [f'{v:13.5e}' for v in slice_values]
+        slice_text = '\n'.join([''.join(s for s in slice_list[6*n:6*n+6])
+                                for n in range(-(-len(slice_values) // 6))])
+        cube.write('\n' + slice_text)
+    print(f'Saved {map_name}-type map as {os.path.realpath(cube.name)}')
 
-    cube.close()
-
-  print("Saved Fourier map successfully")
 
 def residual_map(resolution=0.1,return_map=False,print_peaks=False):
   cctbx_adapter = OlexCctbxAdapter()
@@ -851,7 +847,7 @@ def residual_map(resolution=0.1,return_map=False,print_peaks=False):
       OV.Refresh()
   if return_map==True:
     return diff_map
-  plot_fft_map_cube(diff_map,"diff")
+  write_map_to_cube(diff_map, "diff")
 
 OV.registerFunction(residual_map, False, "NoSpherA2")
 
@@ -886,8 +882,6 @@ def PDF_map(resolution=0.1, dist=1.0, second=True, third=True, fourth=True, only
     fixed = math.pow(2 * math.pi, 1.5)
     cm = tuple(list(uc.orthogonalization_matrix()))
     fm = list(uc.fractionalization_matrix())
-    a_star, b_star, c_star, _, _, _ = uc.reciprocal_parameters()
-    abc_star = np.array([a_star, b_star, c_star], dtype=float)
     sigmas = []
     pre = []
     posn = []
@@ -991,7 +985,7 @@ def PDF_map(resolution=0.1, dist=1.0, second=True, third=True, fourth=True, only
       if anharms[a] is not None:
         for i, h in enumerate(hermite_polynomials_of_3rd_and_4th_order):
           if anharms[a][i] != 0:
-            fact += anharms[a][i] * h(u, sigmas[a], abc_star) / h.order_factorial
+            fact += anharms[a][i] * h(u, sigmas[a]) / h.order_factorial
       result[masks[a]] += p0 * fact
 
     # wrap the results back to the unit cell and assign them to the data flex
@@ -1028,7 +1022,7 @@ def PDF_map(resolution=0.1, dist=1.0, second=True, third=True, fourth=True, only
       print("WARNING! At a distance of {:8.3f} Angs".format(min_dist))
     data.reshape(flex.grid(size[0], size[1], size[2]))
     if save_cube:
-      plot_fft_map_cube(data, "PDF", size)
+      write_map_to_cube(data, "PDF", size)
 
     if do_plot:
       iso = -3.1415
@@ -1090,7 +1084,7 @@ def tomc_map(resolution=0.1, return_map=False, use_f000=False):
                               resolution_factor=1, grid_step=float(resolution)).apply_volume_scaling()
   if return_map == True:
     return tomc_map
-  plot_fft_map_cube(tomc_map,"tomc")
+  write_map_to_cube(tomc_map, "tomc")
 
 OV.registerFunction(tomc_map, False, "NoSpherA2")
 
@@ -1118,7 +1112,7 @@ def deformation_map(resolution=0.1, return_map=False):
                            resolution_factor=1,grid_step=float(resolution)).apply_volume_scaling()
   if return_map==True:
     return def_map
-  plot_fft_map_cube(def_map,"deform")
+  write_map_to_cube(def_map, "deform")
 
 OV.registerFunction(deformation_map, False, "NoSpherA2")
 
@@ -1155,7 +1149,7 @@ def obs_map(resolution=0.1, return_map=False, use_f000=False):
                               resolution_factor=1,grid_step=float(resolution)).apply_volume_scaling()
   if return_map==True:
     return obs_map
-  plot_fft_map_cube(obs_map,"obs")
+  write_map_to_cube(obs_map, "obs")
 
 OV.registerFunction(obs_map, False, "NoSpherA2")
 
@@ -1186,7 +1180,7 @@ def calc_map(resolution=0.1,return_map=False, use_f000=False):
                               resolution_factor=1, grid_step=float(resolution)).apply_volume_scaling()
   if return_map==True:
     return calc_map
-  plot_fft_map_cube(calc_map,"calc")
+  write_map_to_cube(calc_map, "calc")
 
 OV.registerFunction(calc_map, False, "NoSpherA2")
 
