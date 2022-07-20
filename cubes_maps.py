@@ -758,22 +758,16 @@ def write_map_to_cube(fft_map, map_name: str, size: tuple = ()) -> None:
       if charge == 200:
         print("ATOM NOT FOUND!")
       cube.write(f'{charge:6d} {charge:6d}.00000 {positions[i][0]:12.8f} '
-                 f'{positions[i][1]:12.8f} {positions[i][2]:12.8f}\n')
+                 f'{positions[i][1]:12.8f} {positions[i][2]:12.8f}')
 
     for x in range(size[0]):
       for y in range(size[1]):
-        string = ""
-        for z in range(size[2]):
-          string += ("%15.7e" % values[(x*size[1]+y)*size[2]+z])
-          if (z+1) % 6 == 0 and (z+1) != size[2]:
-            string += '\n'
-        if y != (size[1] - 1):
-          string += '\n'
-        cube.write(string)
-      if x != (size[0] - 1):
-        cube.write('\n')
-    cube.close()
-  print("Saved Fourier map successfully")
+        slice_values = values[(x*size[1]+y)*size[2]:(x*size[1]+y+1)*size[2]]
+        slice_list = [f'{v:14.7e}' for v in slice_values]
+        slice_text = '\n'.join([' ' + ' '.join(s for s in slice_list[6*n:6*n+6])
+                                for n in range(-(-len(slice_values) // 6))])
+        cube.write('\n' + slice_text)
+  print(f'Saved {map_name}-type map successfully')
 
 
 def residual_map(resolution=0.1,return_map=False,print_peaks=False):
