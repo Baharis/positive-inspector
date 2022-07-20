@@ -6,6 +6,7 @@ import math
 import numpy as np
 import itertools
 from scipy import linalg
+import textwrap
 from typing import List, Sequence, Union
 
 from olexFunctions import OV
@@ -720,7 +721,7 @@ def write_map_to_cube(fft_map, map_name: str, size: tuple = ()) -> None:
     values = fft_map
     temp = size
   size = [int(t) for t in temp[0:3]]
-  structure_name = OV.ModelSrc()
+  model_name = OV.ModelSrc()
 
   n_atoms = int(olx.xf.au.GetAtomCount())
   positions = [[0., 0., 0.] for _ in range(n_atoms)]
@@ -736,17 +737,17 @@ def write_map_to_cube(fft_map, map_name: str, size: tuple = ()) -> None:
           (cm[3] / (size[0]), cm[4] / (size[1]), cm[5] / (size[2])),
           (cm[6] / (size[0]), cm[7] / (size[1]), cm[8] / (size[2]))]
 
-  print("start writing a %4d x %4d x %4d cube" % (size[0], size[1], size[2]))
+  print(f'Started writing a {size[0]:4d} x {size[1]:4d} x {size[2]:4d} cube')
+  with open(f'{model_name}_{map_name}.cube', 'w') as cube:
+    cube_header = textwrap.dedent(f"""\
+      {map_name}-type map created by Olex2
+      Model name: {model_name}
+      {n_atoms:6d} {0:12.8f} {0:12.8f} {0:12.8f}
+      {size[0]:6d} {vecs[0][0]:12.8f} {vecs[1][0]:12.8f} {vecs[2][0]:12.8f}
+      {size[1]:6d} {vecs[0][1]:12.8f} {vecs[1][1]:12.8f} {vecs[2][1]:12.8f}
+      {size[2]:6d} {vecs[0][2]:12.8f} {vecs[1][2]:12.8f} {vecs[2][2]:12.8f}""")
+    cube.write(cube_header + '\n')
 
-  with open("%s_%s.cube" % (structure_name, map_name), 'w') as cube:
-    cube.write("Fourier synthesis map created by Olex2\n")
-    cube.write("Model name: %s\n" % structure_name)
-    # Origin of cube
-    cube.write("%6d %12.8f %12.8f %12.8f\n" % (n_atoms, 0.0, 0.0, 0.0))
-    # need to write vectors!
-    cube.write("%6d %12.8f %12.8f %12.8f\n" % (size[0], vecs[0][0], vecs[1][0], vecs[2][0]))
-    cube.write("%6d %12.8f %12.8f %12.8f\n" % (size[1], vecs[0][1], vecs[1][1], vecs[2][1]))
-    cube.write("%6d %12.8f %12.8f %12.8f\n" % (size[2], vecs[0][2], vecs[1][2], vecs[2][2]))
     for i in range(n_atoms):
       atom_type = olx.xf.au.GetAtomType(i)
       charge = 200
@@ -756,7 +757,9 @@ def write_map_to_cube(fft_map, map_name: str, size: tuple = ()) -> None:
           break
       if charge == 200:
         print("ATOM NOT FOUND!")
-      cube.write("%6d %6d.00000 %12.8f %12.8f %12.8f\n" % (charge, charge, positions[i][0], positions[i][1], positions[i][2]))
+      cube.write(f'{charge:6d} {charge:6d}.00000 {positions[i][0]:12.8f} '
+                 f'{positions[i][1]:12.8f} {positions[i][2]:12.8f}\n')
+
     for x in range(size[0]):
       for y in range(size[1]):
         string = ""
