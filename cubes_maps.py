@@ -43,7 +43,7 @@ class HermitePolynomial:
     else:
       raise NotImplementedError(f'Order {self.order} is not implemented')
 
-  def __call__(self, u: np.ndarray, si_inv: np.ndarray, abc_star: Sequence) -> np.ndarray:
+  def __call__(self, u: np.ndarray, si_inv: np.ndarray) -> np.ndarray:
     return self._call(u, si_inv)
 
   def __str__(self) -> str:
@@ -886,8 +886,6 @@ def PDF_map(resolution=0.1, dist=1.0, second=True, third=True, fourth=True, only
     fixed = math.pow(2 * math.pi, 1.5)
     cm = tuple(list(uc.orthogonalization_matrix()))
     fm = list(uc.fractionalization_matrix())
-    a_star, b_star, c_star, _, _, _ = uc.reciprocal_parameters()
-    abc_star = np.array([a_star, b_star, c_star], dtype=float)
     sigmas = []
     pre = []
     posn = []
@@ -991,7 +989,7 @@ def PDF_map(resolution=0.1, dist=1.0, second=True, third=True, fourth=True, only
       if anharms[a] is not None:
         for i, h in enumerate(hermite_polynomials_of_3rd_and_4th_order):
           if anharms[a][i] != 0:
-            fact += anharms[a][i] * h(u, sigmas[a], abc_star) / h.order_factorial
+            fact += anharms[a][i] * h(u, sigmas[a]) / h.order_factorial
       result[masks[a]] += p0 * fact
 
     # wrap the results back to the unit cell and assign them to the data flex

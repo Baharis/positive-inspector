@@ -23,8 +23,8 @@ except ImportError:  # Mock modules in development environment if not available
     PDF_map = Mock()
 
 TEMP_DIR = tempfile.TemporaryDirectory()
-TEMP_DIR = Mock()
-TEMP_DIR.name = str(pathlib.Path.home().joinpath('_', 'PI', 'olex3'))
+# TEMP_DIR = Mock()
+# TEMP_DIR.name = str(pathlib.Path.home().joinpath('_', 'PI', 'olex3'))
 
 OLEX2_TEMPLATE_HKL = """
    1   0   0    1.00    1.00
