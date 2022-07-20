@@ -857,11 +857,18 @@ def adp_list_to_sigma_inv(adp: Sequence) -> np.ndarray:
                         (adp[4], adp[5], adp[2])], dtype=np.float)
   return linalg.inv(adp_array)
 
-def digest_boolinput(i):
-  if i == False or i == "False" or i == "0":
-    return False
-  else:
-    return True
+
+def digest_boolinput(i: Union[str, bool]) -> bool:
+  if isinstance(i, bool):
+    return i
+  elif isinstance(i, str):
+    if i.lower() in {'f', 'false', '0'}:
+      return False
+    elif i.lower() in {'t', 'true', '1'}:
+      return True
+  raise ValueError(f'Parameter {i!r} cannot be interpreted as boolean. '
+                   f'Use "True" / "T" / "1" or "False" / "F" / "0" instead.')
+
 
 def PDF_map(resolution=0.1, dist=1.0, second=True, third=True, fourth=True, only_anh=True, do_plot=True, save_cube=False):
   second = digest_boolinput(second)
