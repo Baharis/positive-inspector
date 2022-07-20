@@ -742,10 +742,10 @@ def write_map_to_cube(fft_map, map_name: str, size: tuple = ()) -> None:
     cube_header = textwrap.dedent(f"""\
       {map_name}-type map created by Olex2
       Model name: {model_name}
-      {n_atoms:6d} {0:12.8f} {0:12.8f} {0:12.8f}
-      {size[0]:6d} {vecs[0][0]:12.8f} {vecs[1][0]:12.8f} {vecs[2][0]:12.8f}
-      {size[1]:6d} {vecs[0][1]:12.8f} {vecs[1][1]:12.8f} {vecs[2][1]:12.8f}
-      {size[2]:6d} {vecs[0][2]:12.8f} {vecs[1][2]:12.8f} {vecs[2][2]:12.8f}""")
+      {n_atoms:5d} {0:11.6f} {0:11.6f} {0:11.6f}
+      {size[0]:5d} {vecs[0][0]:11.6f} {vecs[1][0]:11.6f} {vecs[2][0]:11.6f}
+      {size[1]:5d} {vecs[0][1]:11.6f} {vecs[1][1]:11.6f} {vecs[2][1]:11.6f}
+      {size[2]:5d} {vecs[0][2]:11.6f} {vecs[1][2]:11.6f} {vecs[2][2]:11.6f}""")
     cube.write(cube_header + '\n')
 
     for i in range(n_atoms):
@@ -757,14 +757,14 @@ def write_map_to_cube(fft_map, map_name: str, size: tuple = ()) -> None:
           break
       if charge == 200:
         print("ATOM NOT FOUND!")
-      cube.write(f'{charge:6d} {charge:6d}.00000 {positions[i][0]:12.8f} '
-                 f'{positions[i][1]:12.8f} {positions[i][2]:12.8f}')
+      cube.write(f'{charge:5d} {charge:11.6f} {positions[i][0]:11.6f} '
+                 f'{positions[i][1]:11.6f} {positions[i][2]:11.6f}')
 
     for x in range(size[0]):
       for y in range(size[1]):
         slice_values = values[(x*size[1]+y)*size[2]:(x*size[1]+y+1)*size[2]]
-        slice_list = [f'{v:14.7e}' for v in slice_values]
-        slice_text = '\n'.join([' ' + ' '.join(s for s in slice_list[6*n:6*n+6])
+        slice_list = [f'{v:13.5e}' for v in slice_values]
+        slice_text = '\n'.join([''.join(s for s in slice_list[6*n:6*n+6])
                                 for n in range(-(-len(slice_values) // 6))])
         cube.write('\n' + slice_text)
   print(f'Saved {map_name}-type map successfully')
