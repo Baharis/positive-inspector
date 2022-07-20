@@ -963,9 +963,6 @@ def PDF_map(resolution=0.1, dist=1.0, second=True, third=True, fourth=True, only
     # determine pieces of grid around atoms that really need evaluation
     masks = []
     for a in range(n_atoms):
-      if second is False or only_anh is True:
-        if anharms[a] is None:
-          continue
       corner1_ind = corner1_indices[a]
       corner2_ind = corner2_indices[a]
       x_mask = (xi >= corner1_ind[0]) & (xi <= corner2_ind[0])
