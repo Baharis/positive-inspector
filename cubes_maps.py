@@ -939,8 +939,8 @@ def PDF_map(resolution=0.1, dist=1.0, second=True, third=True, fourth=True, only
              np.ceil(np.max(corners_frac, axis=0) * size_array).astype(int)
 
     # determine grid index limits for every atom in asymmetric unit
-    corner1_indices = np.full(shape=(n_atoms, 3), fill_value=np.nan)
-    corner2_indices = np.full(shape=(n_atoms, 3), fill_value=np.nan)
+    corner1_indices = np.full(shape=(n_atoms, 3), fill_value=np.inf)
+    corner2_indices = np.full(shape=(n_atoms, 3), fill_value=-np.inf)
     frac_arr = np.array(fm, dtype=float).reshape(3, 3)
     size_arr = np.array(size)
     for a in range(n_atoms):
@@ -952,11 +952,11 @@ def PDF_map(resolution=0.1, dist=1.0, second=True, third=True, fourth=True, only
           index_limits(atom_coords_cart, dist, frac_arr, size_arr)
 
     # generate a whole grid to be evaluated
-    if np.isnan(corner1_indices).all() or np.isnan(corner2_indices).all():
+    if np.isinf(corner1_indices).all() or np.isinf(corner2_indices).all():
       xi_min = yi_min = zi_min = xi_max = yi_max = zi_max = 0
     else:
-      xi_min, yi_min, zi_min = np.nanmin(corner1_indices, axis=0).astype(int)
-      xi_max, yi_max, zi_max = np.nanmax(corner2_indices, axis=0).astype(int)
+      xi_min, yi_min, zi_min = np.min(corner1_indices, axis=0).astype(int)
+      xi_max, yi_max, zi_max = np.max(corner2_indices, axis=0).astype(int)
     xyz_grid = np.array(np.mgrid[xi_min:xi_max, yi_min:yi_max, zi_min:zi_max])
     xi, yi, zi = map(np.ravel, xyz_grid)
 
