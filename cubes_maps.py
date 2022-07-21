@@ -1046,18 +1046,19 @@ def PDF_map(resolution=0.1, dist=1.0, second=True, third=True, fourth=True, only
           label = str(cctbx_adapter.xray_structure()._scatterers[a].label)
           print(f"WARNING! Integrated negative probability of "
                 f"{-negative_integrals[a]:.2%} to find atom {label} "
-                f"in a {1e6 * negative_volumes[a]:.0f} pm^3 volume!")
-      diffraction_data_d_min = olex_core.GetHklStat()['MinD']
-      for a in range(n_atoms):
-        order = 0 if anharms[a] is None else 4 if any(_ for _ in anharms[a][10:]) \
-          else 3 if any(_ for _ in anharms[a][:10]) else 0
-        if order:
-          adp = adptbx.u_star_as_u_iso(uc, adp_stars[a])
-          if (kl := 1 / (kuhs_limit(order, adp) * 2)) <= diffraction_data_d_min:
-            order_str = '3rd order' if order == 3 else '4th order'
-            label = str(cctbx_adapter.xray_structure()._scatterers[a].label)
-            print(f"WARNING! According to Kuhs' rule, d_min < {kl:.2f} is nece"
-                  f"ssary to model {order_str} displacement for atom {label}!")
+                f"in a {1e6 * negative_volumes[a]:.0f} pm^3 volume")
+    diffraction_data_d_min = olex_core.GetHklStat()['MinD']
+    for a in range(n_atoms):
+      order = 0 if anharms[a] is None else 4 if any(_ for _ in anharms[a][10:]) \
+        else 3 if any(_ for _ in anharms[a][:10]) else 0
+      if order:
+        adp = adptbx.u_star_as_u_iso(uc, adp_stars[a])
+        if (k := 1 / (kuhs_limit(order, adp) * 2)) <= diffraction_data_d_min:
+          order_str = '3rd order' if order == 3 else '4th order'
+          label = str(cctbx_adapter.xray_structure()._scatterers[a].label)
+          print(f"WARNING! According to Kuhs' rule, d_min < {k:.2f}A "
+                f"is necessary to model {order_str} displacement "
+                f"for atom {label} with U_equiv = {adp:.2e}")
 
     data.reshape(flex.grid(size[0], size[1], size[2]))
     if save_cube:
