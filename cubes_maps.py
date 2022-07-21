@@ -4,6 +4,7 @@ import olx
 import olex_core
 import math
 import numpy as np
+import functools
 import itertools
 from scipy import linalg
 import textwrap
@@ -878,6 +879,22 @@ def digest_boolinput(i: Union[str, bool]) -> bool:
                    f'Use "True" / "T" / "1" or "False" / "F" / "0" instead.')
 
 
+def run_with_bitmap(bitmap_text):
+  def decorator(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+      OV.CreateBitmap(bitmap_text)
+      try:
+        return func(*args, **kwargs)
+      except Exception as e:
+        raise e
+      finally:
+        OV.DeleteBitmap(bitmap_text)
+    return wrapper
+  return decorator
+
+
+@run_with_bitmap('working')
 def PDF_map(resolution=0.1, dist=1.0, second=True, third=True, fourth=True, only_anh=True, do_plot=True, save_cube=False):
   second = digest_boolinput(second)
   third = digest_boolinput(third)
@@ -890,192 +907,186 @@ def PDF_map(resolution=0.1, dist=1.0, second=True, third=True, fourth=True, only
     print("Well, what should I print then? Please decide what you want to see!")
     return
   olex.m("kill $Q")
-  OV.CreateBitmap("working")
-  try:
-    dist = float(dist)
-    cctbx_adapter = OlexCctbxAdapter()
-    uc = cctbx_adapter.xray_structure().unit_cell()
-    fixed = math.pow(2 * math.pi, 1.5)
-    cm = tuple(list(uc.orthogonalization_matrix()))
-    fm = list(uc.fractionalization_matrix())
-    sigmas = []
-    pre = []
-    posn = []
-    adp_stars = []
-    anharms = []
-    for atom in cctbx_adapter.xray_structure()._scatterers:
-      posn.append([coord % 1 for coord in atom.site])
-      if atom.u_star != (-1., -1., -1., -1., -1., -1.):
-        adp_star = atom.u_star
-      else:
-        adp_star = adptbx.u_iso_as_u_star(uc, atom.u_iso)
-      adp_stars.append(adp_star)
-      if atom.anharmonic_adp == None:
-        anharms.append(None)
-      else:
-        anharmonic_values = np.array(atom.anharmonic_adp.data())
-        anharmonic_use = np.array([third, ] * 10 + [fourth, ] * 15, dtype=float)
-        anharms.append(anharmonic_use * anharmonic_values)
-      sigmas.append(adp_list_to_sigma_inv(adp_star))
-      pre_temp = linalg.det(sigmas[-1])
-      if pre_temp < 0:
-        print("Skipping NPD Atom %s"%atom.label)
-        pre_temp = -math.sqrt(-pre_temp) / fixed
-      else:
-        pre_temp = math.sqrt(pre_temp) / fixed
-      pre.append(pre_temp)
-
-    gridding = cctbx_adapter.xray_structure().gridding(step=float(resolution))
-    size = tuple(gridding.n_real())
-    n_atoms = len(posn)
-
-    vecs = [(cm[0] / (size[0]), cm[1] / (size[1]), cm[2] / (size[2])),
-            (cm[3] / (size[0]), cm[4] / (size[1]), cm[5] / (size[2])),
-            (cm[6] / (size[0]), cm[7] / (size[1]), cm[8] / (size[2]))]
-
-    print("Calculating Grid %4d x %4d x %4d..." % (size[0], size[1], size[2]))
-    olx.xf.EndUpdate()
-    if OV.HasGUI():
-      olx.Refresh()
-
-    def index_limits(center: np.ndarray,
-                     radius: float,
-                     fractionization_array: np.ndarray,
-                     size_array: np.ndarray) -> Sequence[np.ndarray]:
-      """Calculate evaluation range based on radius and center"""
-      plus_minus_ones = np.array(list(itertools.product([-1, +1], repeat=3)))
-      corners_cart = center + plus_minus_ones * radius
-      corners_frac = (fractionization_array @ corners_cart.T).T
-      return np.floor(np.min(corners_frac, axis=0) * size_array).astype(int), \
-             np.ceil(np.max(corners_frac, axis=0) * size_array).astype(int)
-
-    # determine grid index limits for every atom in asymmetric unit
-    corner1_indices = np.full(shape=(n_atoms, 3), fill_value= np.inf)
-    corner2_indices = np.full(shape=(n_atoms, 3), fill_value=-np.inf)
-    frac_arr = np.array(fm, dtype=float).reshape(3, 3)
-    size_arr = np.array(size)
-    for a in range(n_atoms):
-      if second is False or only_anh is True:
-        if anharms[a] is None:
-          continue
-      atom_coords_cart = np.array(uc.orthogonalize(posn[a]))
-      corner1_indices[a], corner2_indices[a] = \
-          index_limits(atom_coords_cart, dist, frac_arr, size_arr)
-
-    # generate a whole grid to be evaluated
-    if np.isinf(corner1_indices).all() or np.isinf(corner2_indices).all():
-      xi_min = yi_min = zi_min = xi_max = yi_max = zi_max = 0
+  dist = float(dist)
+  cctbx_adapter = OlexCctbxAdapter()
+  uc = cctbx_adapter.xray_structure().unit_cell()
+  fixed = math.pow(2 * math.pi, 1.5)
+  cm = tuple(list(uc.orthogonalization_matrix()))
+  fm = list(uc.fractionalization_matrix())
+  sigmas = []
+  pre = []
+  posn = []
+  adp_stars = []
+  anharms = []
+  for atom in cctbx_adapter.xray_structure()._scatterers:
+    posn.append([coord % 1 for coord in atom.site])
+    if atom.u_star != (-1., -1., -1., -1., -1., -1.):
+      adp_star = atom.u_star
     else:
-      xi_min, yi_min, zi_min = np.min(corner1_indices, axis=0).astype(int)
-      xi_max, yi_max, zi_max = np.max(corner2_indices, axis=0).astype(int)
-    xyz_grid = np.array(np.mgrid[xi_min:xi_max, yi_min:yi_max, zi_min:zi_max])
-    xi, yi, zi = map(np.ravel, xyz_grid)
+      adp_star = adptbx.u_iso_as_u_star(uc, atom.u_iso)
+    adp_stars.append(adp_star)
+    if atom.anharmonic_adp == None:
+      anharms.append(None)
+    else:
+      anharmonic_values = np.array(atom.anharmonic_adp.data())
+      anharmonic_use = np.array([third, ] * 10 + [fourth, ] * 15, dtype=float)
+      anharms.append(anharmonic_use * anharmonic_values)
+    sigmas.append(adp_list_to_sigma_inv(adp_star))
+    pre_temp = linalg.det(sigmas[-1])
+    if pre_temp < 0:
+      print("Skipping NPD Atom %s"%atom.label)
+      pre_temp = -math.sqrt(-pre_temp) / fixed
+    else:
+      pre_temp = math.sqrt(pre_temp) / fixed
+    pre.append(pre_temp)
 
-    # determine pieces of grid around atoms that really need evaluation
-    masks = []
+  gridding = cctbx_adapter.xray_structure().gridding(step=float(resolution))
+  size = tuple(gridding.n_real())
+  n_atoms = len(posn)
+
+  vecs = [(cm[0] / (size[0]), cm[1] / (size[1]), cm[2] / (size[2])),
+          (cm[3] / (size[0]), cm[4] / (size[1]), cm[5] / (size[2])),
+          (cm[6] / (size[0]), cm[7] / (size[1]), cm[8] / (size[2]))]
+
+  print("Calculating Grid %4d x %4d x %4d..." % (size[0], size[1], size[2]))
+  olx.xf.EndUpdate()
+  if OV.HasGUI():
+    olx.Refresh()
+
+  def index_limits(center: np.ndarray,
+                   radius: float,
+                   fractionization_array: np.ndarray,
+                   size_array: np.ndarray) -> Sequence[np.ndarray]:
+    """Calculate evaluation range based on radius and center"""
+    plus_minus_ones = np.array(list(itertools.product([-1, +1], repeat=3)))
+    corners_cart = center + plus_minus_ones * radius
+    corners_frac = (fractionization_array @ corners_cart.T).T
+    return np.floor(np.min(corners_frac, axis=0) * size_array).astype(int), \
+           np.ceil(np.max(corners_frac, axis=0) * size_array).astype(int)
+
+  # determine grid index limits for every atom in asymmetric unit
+  corner1_indices = np.full(shape=(n_atoms, 3), fill_value= np.inf)
+  corner2_indices = np.full(shape=(n_atoms, 3), fill_value=-np.inf)
+  frac_arr = np.array(fm, dtype=float).reshape(3, 3)
+  size_arr = np.array(size)
+  for a in range(n_atoms):
+    if second is False or only_anh is True:
+      if anharms[a] is None:
+        continue
+    atom_coords_cart = np.array(uc.orthogonalize(posn[a]))
+    corner1_indices[a], corner2_indices[a] = \
+        index_limits(atom_coords_cart, dist, frac_arr, size_arr)
+
+  # generate a whole grid to be evaluated
+  if np.isinf(corner1_indices).all() or np.isinf(corner2_indices).all():
+    xi_min = yi_min = zi_min = xi_max = yi_max = zi_max = 0
+  else:
+    xi_min, yi_min, zi_min = np.min(corner1_indices, axis=0).astype(int)
+    xi_max, yi_max, zi_max = np.max(corner2_indices, axis=0).astype(int)
+  xyz_grid = np.array(np.mgrid[xi_min:xi_max, yi_min:yi_max, zi_min:zi_max])
+  xi, yi, zi = map(np.ravel, xyz_grid)
+
+  # determine pieces of grid around atoms that really need evaluation
+  masks = []
+  for a in range(n_atoms):
+    corner1_ind = corner1_indices[a]
+    corner2_ind = corner2_indices[a]
+    x_mask = (xi >= corner1_ind[0]) & (xi <= corner2_ind[0])
+    y_mask = (yi >= corner1_ind[1]) & (yi <= corner2_ind[1])
+    z_mask = (zi >= corner1_ind[2]) & (zi <= corner2_ind[2])
+    masks.append(x_mask & y_mask & z_mask)
+
+  # prepare lists for integration and evaluate the PDF on the grid
+  positive_integrals, negative_integrals, negative_volumes = [], [], []
+  volume_scale_factor = linalg.det(np.array(vecs)) / uc.volume()
+  pdfs = np.zeros_like(xi, dtype=np.float)
+  for a in range(n_atoms):
+    if (second is False or only_anh is True) and anharms[a] is None:
+      pdf = np.zeros(1)
+    elif pre[a] < 0:  # Skip NPD atoms
+      pdf = np.zeros(1)
+    else:
+      u = np.vstack([xi[masks[a]] / size[0] - posn[a][0],
+                     yi[masks[a]] / size[1] - posn[a][1],
+                     zi[masks[a]] / size[2] - posn[a][2]]).T
+      mhalfuTUu = np.clip(-0.5 * np.sum(u * (u @ sigmas[a]), axis=1),
+                          a_min=None, a_max=0)
+      p0 = pre[a] * np.exp(mhalfuTUu)
+      p0[abs(p0) < 1E-30] = 0
+      fact = float(second)
+      if anharms[a] is not None:
+        for i, h in enumerate(hermite_polynomials_of_3rd_and_4th_order):
+          if anharms[a][i] != 0:
+            fact += anharms[a][i] * h(u, sigmas[a]) / h.order_factorial
+      pdf = p0 * fact
+      pdfs[masks[a]] += pdf
+    positive_integrals.append(np.sum(pdf[pdf > 0]) * volume_scale_factor)
+    negative_integrals.append(np.sum(pdf[pdf < 0]) * volume_scale_factor)
+    negative_volumes.append(pdf[pdf < 0].size * volume_scale_factor)
+
+  # wrap the results back to the unit cell and assign them to the data flex
+  data_array = np.zeros(shape=(size[0], size[1], size[2], ))
+  x_cases = (xi < 0, (xi >= 0) & (xi < size[0]), xi >= size[0])
+  y_cases = (yi < 0, (yi >= 0) & (yi < size[1]), yi >= size[1])
+  z_cases = (zi < 0, (zi >= 0) & (zi < size[2]), zi >= size[2])
+  cases = (c[0] & c[1] & c[2] for c in itertools.product(x_cases, y_cases, z_cases))
+  for c in cases:
+    data_array[xi[c] % size[0], yi[c] % size[1], zi[c] % size[2]] += pdfs[c]
+  data = flex.double(data_array.flatten())
+
+  # plot and save the map
+  stats = data.min_max_mean()
+  OV.SetVar("Negative_PDF", False)
+  if stats.min < -0.05:
+    index = (data == stats.min).iselection()[0]
+    x = index // (size[2] * size[1])
+    y = (index - x * size[2] * size[1]) // size[2]
+    z = (index - x * size[2] * size[1]) % size[2]
+    pos = [(x) * vecs[0][0] + (y) * vecs[0][1] + (z) * vecs[0][2],
+           (x) * vecs[1][0] + (y) * vecs[1][1] + (z) * vecs[1][2],
+           (x) * vecs[2][0] + (y) * vecs[2][1] + (z) * vecs[2][2]]
+    min_dist = cm[0] + cm[4] + cm[8]
+    atom_nr = 0
+    for i in range(n_atoms):
+      pos_cart = uc.orthogonalize(posn[i])
+      diff = [(pos[0] - pos_cart[0]), (pos[1] - pos_cart[1]), (pos[2] - pos_cart[2])]
+      dist_ = np.sqrt(diff[0] * diff[0] + diff[1] * diff[1] + diff[2] * diff[2])
+      if dist_ < min_dist:
+        min_dist = dist_
+        atom_nr = i
+    label = str(cctbx_adapter.xray_structure()._scatterers[atom_nr].label)
+    print("WARNING! Significant negative PDF for Atom: " + label)
+    print("WARNING! At a distance of {:8.3f} Angs".format(min_dist))
+    OV.SetVar("Negative_PDF", True)
     for a in range(n_atoms):
-      corner1_ind = corner1_indices[a]
-      corner2_ind = corner2_indices[a]
-      x_mask = (xi >= corner1_ind[0]) & (xi <= corner2_ind[0])
-      y_mask = (yi >= corner1_ind[1]) & (yi <= corner2_ind[1])
-      z_mask = (zi >= corner1_ind[2]) & (zi <= corner2_ind[2])
-      masks.append(x_mask & y_mask & z_mask)
+      if negative_integrals[a] < -0.0001:
+        label = str(cctbx_adapter.xray_structure()._scatterers[a].label)
+        print(f"WARNING! Integrated negative probability of "
+              f"{-negative_integrals[a]:.2%} to find atom {label} "
+              f"in a {1e6 * negative_volumes[a]:.0f} pm^3 volume")
+  diffraction_data_d_min = olex_core.GetHklStat()['MinD']
+  for a in range(n_atoms):
+    order = 0 if anharms[a] is None else 4 if any(_ for _ in anharms[a][10:]) \
+      else 3 if any(_ for _ in anharms[a][:10]) else 0
+    if order:
+      adp = adptbx.u_star_as_u_iso(uc, adp_stars[a])
+      if (k := 1 / (kuhs_limit(order, adp) * 2)) <= diffraction_data_d_min:
+        order_str = '3rd order' if order == 3 else '4th order'
+        label = str(cctbx_adapter.xray_structure()._scatterers[a].label)
+        print(f"WARNING! According to Kuhs' rule, d_min < {k:.2f}A "
+              f"is necessary to model {order_str} displacement "
+              f"for atom {label} with U_equiv = {adp:.2e}")
 
-    # prepare lists for integration and evaluate the PDF on the grid
-    positive_integrals, negative_integrals, negative_volumes = [], [], []
-    volume_scale_factor = linalg.det(np.array(vecs)) / uc.volume()
-    pdfs = np.zeros_like(xi, dtype=np.float)
-    for a in range(n_atoms):
-      if (second is False or only_anh is True) and anharms[a] is None:
-        pdf = np.zeros(1)
-      elif pre[a] < 0:  # Skip NPD atoms
-        pdf = np.zeros(1)
-      else:
-        u = np.vstack([xi[masks[a]] / size[0] - posn[a][0],
-                       yi[masks[a]] / size[1] - posn[a][1],
-                       zi[masks[a]] / size[2] - posn[a][2]]).T
-        mhalfuTUu = np.clip(-0.5 * np.sum(u * (u @ sigmas[a]), axis=1),
-                            a_min=None, a_max=0)
-        p0 = pre[a] * np.exp(mhalfuTUu)
-        p0[abs(p0) < 1E-30] = 0
-        fact = float(second)
-        if anharms[a] is not None:
-          for i, h in enumerate(hermite_polynomials_of_3rd_and_4th_order):
-            if anharms[a][i] != 0:
-              fact += anharms[a][i] * h(u, sigmas[a]) / h.order_factorial
-        pdf = p0 * fact
-        pdfs[masks[a]] += pdf
-      positive_integrals.append(np.sum(pdf[pdf > 0]) * volume_scale_factor)
-      negative_integrals.append(np.sum(pdf[pdf < 0]) * volume_scale_factor)
-      negative_volumes.append(pdf[pdf < 0].size * volume_scale_factor)
+  data.reshape(flex.grid(size[0], size[1], size[2]))
+  if save_cube:
+    write_map_to_cube(data, "PDF", size)
 
-    # wrap the results back to the unit cell and assign them to the data flex
-    data_array = np.zeros(shape=(size[0], size[1], size[2], ))
-    x_cases = (xi < 0, (xi >= 0) & (xi < size[0]), xi >= size[0])
-    y_cases = (yi < 0, (yi >= 0) & (yi < size[1]), yi >= size[1])
-    z_cases = (zi < 0, (zi >= 0) & (zi < size[2]), zi >= size[2])
-    cases = (c[0] & c[1] & c[2] for c in itertools.product(x_cases, y_cases, z_cases))
-    for c in cases:
-      data_array[xi[c] % size[0], yi[c] % size[1], zi[c] % size[2]] += pdfs[c]
-    data = flex.double(data_array.flatten())
+  if do_plot:
+    iso = -3.1415
+    if second == False:
+      iso = -0.05
+    plot_map(data, iso, dist, min_v=stats.min, max_v=stats.max)
 
-    # plot and save the map
-    stats = data.min_max_mean()
-    OV.SetVar("Negative_PDF", False)
-    if stats.min < -0.05:
-      index = (data == stats.min).iselection()[0]
-      x = index // (size[2] * size[1])
-      y = (index - x * size[2] * size[1]) // size[2]
-      z = (index - x * size[2] * size[1]) % size[2]
-      pos = [(x) * vecs[0][0] + (y) * vecs[0][1] + (z) * vecs[0][2],
-             (x) * vecs[1][0] + (y) * vecs[1][1] + (z) * vecs[1][2],
-             (x) * vecs[2][0] + (y) * vecs[2][1] + (z) * vecs[2][2]]
-      min_dist = cm[0] + cm[4] + cm[8]
-      atom_nr = 0
-      for i in range(n_atoms):
-        pos_cart = uc.orthogonalize(posn[i])
-        diff = [(pos[0] - pos_cart[0]), (pos[1] - pos_cart[1]), (pos[2] - pos_cart[2])]
-        dist_ = np.sqrt(diff[0] * diff[0] + diff[1] * diff[1] + diff[2] * diff[2])
-        if dist_ < min_dist:
-          min_dist = dist_
-          atom_nr = i
-      label = str(cctbx_adapter.xray_structure()._scatterers[atom_nr].label)
-      print("WARNING! Significant negative PDF for Atom: " + label)
-      print("WARNING! At a distance of {:8.3f} Angs".format(min_dist))
-      OV.SetVar("Negative_PDF", True)
-      for a in range(n_atoms):
-        if negative_integrals[a] < -0.0001:
-          label = str(cctbx_adapter.xray_structure()._scatterers[a].label)
-          print(f"WARNING! Integrated negative probability of "
-                f"{-negative_integrals[a]:.2%} to find atom {label} "
-                f"in a {1e6 * negative_volumes[a]:.0f} pm^3 volume")
-    diffraction_data_d_min = olex_core.GetHklStat()['MinD']
-    for a in range(n_atoms):
-      order = 0 if anharms[a] is None else 4 if any(_ for _ in anharms[a][10:]) \
-        else 3 if any(_ for _ in anharms[a][:10]) else 0
-      if order:
-        adp = adptbx.u_star_as_u_iso(uc, adp_stars[a])
-        if (k := 1 / (kuhs_limit(order, adp) * 2)) <= diffraction_data_d_min:
-          order_str = '3rd order' if order == 3 else '4th order'
-          label = str(cctbx_adapter.xray_structure()._scatterers[a].label)
-          print(f"WARNING! According to Kuhs' rule, d_min < {k:.2f}A "
-                f"is necessary to model {order_str} displacement "
-                f"for atom {label} with U_equiv = {adp:.2e}")
-
-    data.reshape(flex.grid(size[0], size[1], size[2]))
-    if save_cube:
-      write_map_to_cube(data, "PDF", size)
-
-    if do_plot:
-      iso = -3.1415
-      if second == False:
-        iso = -0.05
-      plot_map(data, iso, dist, min_v=stats.min, max_v=stats.max)
-  except Exception as e:
-    OV.DeleteBitmap("working")
-    raise(e)
-
-  OV.DeleteBitmap("working")
 OV.registerFunction(PDF_map, False, "NoSpherA2")
 
 def tomc_map(resolution=0.1, return_map=False, use_f000=False):
