@@ -950,7 +950,7 @@ def PDF_map(resolution=0.1, dist=1.0, second=True, third=True, fourth=True, only
              np.ceil(np.max(corners_frac, axis=0) * size_array).astype(int)
 
     # determine grid index limits for every atom in asymmetric unit
-    corner1_indices = np.full(shape=(n_atoms, 3), fill_value=np.inf)
+    corner1_indices = np.full(shape=(n_atoms, 3), fill_value= np.inf)
     corner2_indices = np.full(shape=(n_atoms, 3), fill_value=-np.inf)
     frac_arr = np.array(fm, dtype=float).reshape(3, 3)
     size_arr = np.array(size)
@@ -1021,6 +1021,7 @@ def PDF_map(resolution=0.1, dist=1.0, second=True, third=True, fourth=True, only
 
     # plot and save the map
     stats = data.min_max_mean()
+    OV.SetVar("Negative_PDF", False)
     if stats.min < -0.05:
       index = (data == stats.min).iselection()[0]
       x = index // (size[2] * size[1])
@@ -1041,6 +1042,7 @@ def PDF_map(resolution=0.1, dist=1.0, second=True, third=True, fourth=True, only
       label = str(cctbx_adapter.xray_structure()._scatterers[atom_nr].label)
       print("WARNING! Significant negative PDF for Atom: " + label)
       print("WARNING! At a distance of {:8.3f} Angs".format(min_dist))
+      OV.SetVar("Negative_PDF", True)
       for a in range(n_atoms):
         if negative_integrals[a] < -0.0001:
           label = str(cctbx_adapter.xray_structure()._scatterers[a].label)
