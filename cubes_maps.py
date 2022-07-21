@@ -6,8 +6,8 @@ import math
 import numpy as np
 import functools
 import itertools
-from scipy import linalg
 import textwrap
+from scipy import linalg
 from typing import List, Sequence, Union
 
 from olexFunctions import OV
@@ -913,12 +913,9 @@ def PDF_map(resolution=0.1, dist=1.0, second=True, third=True, fourth=True, only
   fixed = math.pow(2 * math.pi, 1.5)
   cm = tuple(list(uc.orthogonalization_matrix()))
   fm = list(uc.fractionalization_matrix())
-  sigmas = []
-  pre = []
-  posn = []
-  adp_stars = []
-  anharms = []
+  adp_stars, anharms, labels, posn, pre, sigmas = [], [], [], [], [], []
   for atom in cctbx_adapter.xray_structure()._scatterers:
+    labels.append(atom.label)
     posn.append([coord % 1 for coord in atom.site])
     if atom.u_star != (-1., -1., -1., -1., -1., -1.):
       adp_star = atom.u_star
@@ -934,7 +931,7 @@ def PDF_map(resolution=0.1, dist=1.0, second=True, third=True, fourth=True, only
     sigmas.append(adp_list_to_sigma_inv(adp_star))
     pre_temp = linalg.det(sigmas[-1])
     if pre_temp < 0:
-      print("Skipping NPD Atom %s"%atom.label)
+      print("Skipping NPD Atom %s" % atom.label)
       pre_temp = -math.sqrt(-pre_temp) / fixed
     else:
       pre_temp = math.sqrt(pre_temp) / fixed
@@ -1054,15 +1051,13 @@ def PDF_map(resolution=0.1, dist=1.0, second=True, third=True, fourth=True, only
       if dist_ < min_dist:
         min_dist = dist_
         atom_nr = i
-    label = str(cctbx_adapter.xray_structure()._scatterers[atom_nr].label)
-    print("WARNING! Significant negative PDF for Atom: " + label)
-    print("WARNING! At a distance of {:8.3f} Angs".format(min_dist))
+    print(f"WARNING! Significant negative PDF for atom {labels[atom_nr]} " 
+          f"at a distance of {min_dist:8.3f} Angstrom")
     OV.SetVar("Negative_PDF", True)
     for a in range(n_atoms):
       if negative_integrals[a] < -0.0001:
-        label = str(cctbx_adapter.xray_structure()._scatterers[a].label)
         print(f"WARNING! Integrated negative probability of "
-              f"{-negative_integrals[a]:.2%} to find atom {label} "
+              f"{-negative_integrals[a]:.2%} to find atom {labels[a]} "
               f"in a {1e6 * negative_volumes[a]:.0f} pm^3 volume")
   diffraction_data_d_min = olex_core.GetHklStat()['MinD']
   for a in range(n_atoms):
@@ -1070,21 +1065,17 @@ def PDF_map(resolution=0.1, dist=1.0, second=True, third=True, fourth=True, only
       else 3 if any(_ for _ in anharms[a][:10]) else 0
     if order:
       adp = adptbx.u_star_as_u_iso(uc, adp_stars[a])
-      if (k := 1 / (kuhs_limit(order, adp) * 2)) <= diffraction_data_d_min:
+      if (k := 0.5 / kuhs_limit(order, adp)) <= olex_core.GetHklStat()['MinD']:
         order_str = '3rd order' if order == 3 else '4th order'
-        label = str(cctbx_adapter.xray_structure()._scatterers[a].label)
         print(f"WARNING! According to Kuhs' rule, d_min < {k:.2f}A "
               f"is necessary to model {order_str} displacement "
-              f"for atom {label} with U_equiv = {adp:.2e}")
+              f"for atom {labels[a]} with U_equiv = {adp:.2e}")
 
   data.reshape(flex.grid(size[0], size[1], size[2]))
   if save_cube:
     write_map_to_cube(data, "PDF", size)
-
   if do_plot:
-    iso = -3.1415
-    if second == False:
-      iso = -0.05
+    iso = -0.05 if second is False else -3.1415
     plot_map(data, iso, dist, min_v=stats.min, max_v=stats.max)
 
 OV.registerFunction(PDF_map, False, "NoSpherA2")
