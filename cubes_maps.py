@@ -24,6 +24,14 @@ import Wfn_Job
 
 a2b = 0.529177210903
 
+try:
+  from_outside = False
+  p_path = os.path.dirname(os.path.abspath(__file__))
+except:
+  from_outside = True
+  p_path = os.path.dirname(os.path.abspath("__file__"))
+
+
 class HermitePolynomial:
   THIRD_ORDER_COEFFICIENTS = ([0, 0, 0], [0, 0, 1], [0, 0, 2], [0, 1, 1],
                               [0, 1, 2], [0, 2, 2], [1, 1, 1], [1, 1, 2],
@@ -79,9 +87,8 @@ class HermitePolynomial:
 
   @property
   def unique_indexing_permutations(self) -> int:
-    f = math.factorial
-    v = self.c
-    return f(self.order) / np.prod([f(v.count(i)) for i in range(self.order)])
+    return self.order_factorial / \
+        np.prod([math.factorial(self.c.count(i)) for i in range(self.order)])
 
   def w(self, u: np.ndarray, si_inv: np.ndarray) -> List[np.ndarray]:
     return [sum(si_inv[c, i] * u[:, i] for i in range(3)) for c in self.c]
@@ -91,12 +98,11 @@ hermite_polynomials_of_3rd_and_4th_order = \
   [HermitePolynomial(c) for c in HermitePolynomial.THIRD_ORDER_COEFFICIENTS] +\
   [HermitePolynomial(c) for c in HermitePolynomial.FOURTH_ORDER_COEFFICIENTS]
 
-try:
-  from_outside = False
-  p_path = os.path.dirname(os.path.abspath(__file__))
-except:
-  from_outside = True
-  p_path = os.path.dirname(os.path.abspath("__file__"))
+
+def kuhs_limit(order: int, adp: np.ndarray) -> float:
+  """Resolution required to model anharmonic ADP; see doi: 10.1071/PH880369"""
+  return (2 * np.pi) ** -1.5 * (2 * order * np.log(2) / adp) ** 0.5
+
 
 def calculate_cubes():
   if NoSpherA2.is_disordered == True:
@@ -851,11 +857,13 @@ def residual_map(resolution=0.1,return_map=False,print_peaks=False):
 
 OV.registerFunction(residual_map, False, "NoSpherA2")
 
+
+def adp_list_to_array(a: Sequence) -> np.ndarray:
+  return np.array([(a[0], a[3], a[4]), (a[3], a[1], a[5]), (a[4], a[5], a[2])])
+
+
 def adp_list_to_sigma_inv(adp: Sequence) -> np.ndarray:
-  adp_array = np.array([(adp[0], adp[3], adp[4]),
-                        (adp[3], adp[1], adp[5]),
-                        (adp[4], adp[5], adp[2])], dtype=np.float)
-  return linalg.inv(adp_array)
+  return linalg.inv(adp_list_to_array(adp))
 
 
 def digest_boolinput(i: Union[str, bool]) -> bool:
@@ -893,6 +901,7 @@ def PDF_map(resolution=0.1, dist=1.0, second=True, third=True, fourth=True, only
     sigmas = []
     pre = []
     posn = []
+    adp_stars = []
     anharms = []
     for atom in cctbx_adapter.xray_structure()._scatterers:
       posn.append([coord % 1 for coord in atom.site])
@@ -900,6 +909,7 @@ def PDF_map(resolution=0.1, dist=1.0, second=True, third=True, fourth=True, only
         adp_star = atom.u_star
       else:
         adp_star = adptbx.u_iso_as_u_star(uc, atom.u_iso)
+      adp_stars.append(adp_star)
       if atom.anharmonic_adp == None:
         anharms.append(None)
       else:
@@ -1037,6 +1047,18 @@ def PDF_map(resolution=0.1, dist=1.0, second=True, third=True, fourth=True, only
           print(f"WARNING! Integrated negative probability of "
                 f"{-negative_integrals[a]:.2%} to find atom {label} "
                 f"in a {1e6 * negative_volumes[a]:.0f} pm^3 volume!")
+      diffraction_data_d_min = olex_core.GetHklStat()['MinD']
+      for a in range(n_atoms):
+        order = 0 if anharms[a] is None else 4 if any(_ for _ in anharms[a][10:]) \
+          else 3 if any(_ for _ in anharms[a][:10]) else 0
+        if order:
+          adp = adptbx.u_star_as_u_iso(uc, adp_stars[a])
+          if (kl := 1 / (kuhs_limit(order, adp) * 2)) <= diffraction_data_d_min:
+            order_str = '3rd order' if order == 3 else '4th order'
+            label = str(cctbx_adapter.xray_structure()._scatterers[a].label)
+            print(f"WARNING! According to Kuhs' rule, d_min < {kl:.2f} is nece"
+                  f"ssary to model {order_str} displacement for atom {label}!")
+
     data.reshape(flex.grid(size[0], size[1], size[2]))
     if save_cube:
       write_map_to_cube(data, "PDF", size)
