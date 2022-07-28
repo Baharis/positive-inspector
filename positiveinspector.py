@@ -783,16 +783,6 @@ def test_pdf_map_wheregex(*args) -> None:
     _run_test_pdf_map(setting_list=test_setting_list)
 
 
-def test_pdf_map_single_case() -> None:
-    test_setting_list = SettingList.wheregex(**{'C111': [0.00001]})
-    _run_test_pdf_map(setting_list=test_setting_list)
-
-
 namespace = 'NoSpherA2'
 OV.registerFunction(test_pdf_map_where, False, namespace)
 OV.registerFunction(test_pdf_map_wheregex, False, namespace)
-OV.registerFunction(test_pdf_map_single_case, False, namespace)
-
-
-if __name__ == '__main__':
-    visualise_my_hamiltonian()
