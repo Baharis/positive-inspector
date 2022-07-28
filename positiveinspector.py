@@ -451,7 +451,6 @@ class PDFGrid(object):
         PDF_map(grid_step_size, setting['grid_radius'], setting['use_second'],
                 setting['use_third'], setting['use_fourth'], False, True, True)
         new = cls._read_from_cube_file(olex2_cube_file_path)
-        new.array = new.array if setting['use_second'] else new.array / 1000.
         center = setting.atom_position
         return new.trim_around(center, radius=float(setting['grid_radius']))
 
