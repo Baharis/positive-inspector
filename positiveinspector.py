@@ -788,66 +788,6 @@ def test_pdf_map_single_case() -> None:
     _run_test_pdf_map(setting_list=test_setting_list)
 
 
-def visualise_my_hamiltonian() -> None:
-    import matplotlib
-    import matplotlib.pyplot as plt
-    from mpl_toolkits.mplot3d import Axes3D
-    matplotlib.use('TkAgg')
-    U_v = [0.01, 0.01, 0.01, 0.0, 0.0, 0.0]
-    U_m = np.array([(U_v[0], U_v[5], U_v[4]),
-                  (U_v[5], U_v[1], U_v[3]),
-                  (U_v[4], U_v[3], U_v[2])])
-    si_m = U_m * 0.02
-    si_i = np.linalg.inv(si_m)
-
-    def P_harm(ux: float, uy: float, uz: float):
-        uv = np.array([ux, uy, uz])
-        # print(ux, uy, uz, -1/2 * uv.T @ si_i @ uv, np.exp(-1/2 * uv.T @ si_i @ uv))
-        return (np.linalg.det(si_i) ** (1/2)) / ((2 * np.pi) ** (3/2)) * \
-               np.exp(-1/2 * uv.T @ si_i @ uv)
-
-    def H111(ux: float, uy: float, uz: float):
-        part0 = (si_i[0, 0] * ux + si_i[0, 1] * uy + si_i[0, 2] * uz) ** 3
-        part1 = 3 * si_i[0, 0] * si_i[0, 0] * ux
-        part2 = 3 * si_i[0, 0] * si_i[0, 1] * uy
-        part3 = 3 * si_i[0, 0] * si_i[0, 2] * uz
-        return part0 - part1 - part2 - part3
-
-    def H112(ux: float, uy: float, uz: float):
-        w1 = si_i[0, 0] * ux + si_i[0, 1] * uy + si_i[0, 2] * uz
-        w2 = si_i[1, 0] * ux + si_i[1, 1] * uy + si_i[1, 2] * uz
-        return w1 * w1 * w2 - 2 * w1 * si_i[0, 1] - w2 * si_i[0, 0]
-
-    def H1112(ux: float, uy: float, uz: float):
-        w1 = si_i[0, 0] * ux + si_i[0, 1] * uy + si_i[0, 2] * uz
-        w2 = si_i[1, 0] * ux + si_i[1, 1] * uy + si_i[1, 2] * uz
-        return w1 * w1 * w1 * w2 - 3 * w1 * w1 * si_i[0, 1] - \
-               3 * w1 * w2 * si_i[0, 0] + 3 * si_i[0, 0] * si_i[0, 1]
-
-    def H1122(ux: float, uy: float, uz: float):
-        w1 = si_i[0, 0] * ux + si_i[0, 1] * uy + si_i[0, 2] * uz
-        w2 = si_i[1, 0] * ux + si_i[1, 1] * uy + si_i[1, 2] * uz
-        return w1 * w1 * w2 * w2 - w1 * w1 * si_i[1, 1] - w2 * w2 * si_i[0, 0] \
-               - 4 * w1 * w2 * si_i[0, 1] + si_i[0, 0] * si_i[1, 1] \
-               + 2 * si_i[1, 2] * si_i[1, 2]
-
-    x_space = y_space = z_space = np.linspace(-0.1, 0.1, 21)
-    x_mesh, y_mesh, z_mesh = np.meshgrid(x_space, y_space, z_space)
-    x_list = x_mesh.reshape(-1)
-    y_list = y_mesh.reshape(-1)
-    z_list = z_mesh.reshape(-1)
-    H_vectorised = np.vectorize(H1122)
-    P_harm_vectorised = np.vectorize(P_harm)
-    pdf_list = np.multiply(P_harm_vectorised(x_list, y_list, z_list),
-                           H_vectorised(x_list, y_list, z_list))
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
-    size_list = 10 * np.log(np.abs(pdf_list)) / max(np.log(np.abs(pdf_list)))
-    colors = ['b' * (p > 0) + 'r' * (p <= 0) for p in pdf_list]
-    ax.scatter(x_list, y_list, z_list, s=size_list, c=colors)
-    plt.show()
-
-
 namespace = 'NoSpherA2'
 OV.registerFunction(test_pdf_map_where, False, namespace)
 OV.registerFunction(test_pdf_map_wheregex, False, namespace)
